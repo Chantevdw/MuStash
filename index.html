@@ -1824,9 +1824,11 @@ if(syncReady())runSync(false);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&syncReady()&&Date.now()-(syncCfg.last||0)>60000)runSync(false);});
 window.addEventListener("online",()=>runSync(false));
 document.querySelectorAll(".ic[data-icon]").forEach(el=>{
-  const url=new URL("icons/"+el.dataset.icon+".png",location.href).href,im=new Image();
-  im.onload=()=>{el.style.setProperty("--icon","url("+url+")");el.classList.add("has-icon");};
-  im.src=url;});
+  // look in icons/ first, then in the main folder
+  const tryUrl=(list)=>{if(!list.length)return;const url=new URL(list[0],location.href).href,im=new Image();
+    im.onload=()=>{el.style.setProperty("--icon","url("+url+")");el.classList.add("has-icon");};
+    im.onerror=()=>tryUrl(list.slice(1));im.src=url;};
+  tryUrl(["icons/"+el.dataset.icon+".png",el.dataset.icon+".png"]);});
 // lets the app open offline once it has been loaded (only on a real web address)
 if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>

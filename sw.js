@@ -2,7 +2,7 @@
 /* Offline support for MuStash. Keeps a copy of the app's own files so it opens without a connection.
    It only ever handles files from this app's own address: requests to Google (sign-in, Drive) and
    anything else are left alone and never stored. Change CACHE when you publish a new version. */
-const CACHE="mustash-v4";
+const CACHE="mustash-v5";
 const FILES=["./","index.html","statement-parser.js","sync.js","sync-config.js","sync-drive.js","applock.js","pdf.min.js","pdf.worker.min.js","manifest.json","icon-192.png","icon-512.png","icon-maskable-512.png","apple-touch-icon.png","favicon-64.png","mark.png"];
 
 self.addEventListener("install",e=>{
