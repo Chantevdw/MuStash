@@ -108,10 +108,12 @@
   .pos{color:var(--in)}.neg{color:var(--out)}
   .grow{flex:1;min-width:130px}
 
-  .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow)}
   .tile .l{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-family:ui-monospace,Consolas,monospace}
-  .tile .v{font-size:23px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .tile .v{font-size:clamp(16px,5.2vw,23px);font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .tile{min-width:0}
+  html,body{overflow-x:hidden}
 
   .donut-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center;padding:8px 0 18px;margin-bottom:8px;border-bottom:1px solid var(--line)}
   .donut{width:200px;height:200px;flex:none;transform:rotate(0deg)}
@@ -241,7 +243,7 @@
     main{padding:26px 20px 80px}
     .pad{padding:20px 22px}
     h2.title{font-size:24px}
-    .tiles{grid-template-columns:repeat(4,1fr)}
+    .tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
     .tile .v{font-size:26px}
     .catbar{grid-template-columns:160px minmax(0,1fr) minmax(130px,max-content)}
     .catbar .track{grid-column:auto;order:0}
