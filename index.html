@@ -153,7 +153,8 @@
   table.matrix th,table.matrix td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
   table.matrix th{font-weight:600;color:var(--ink-faint);font-size:12px;position:sticky;top:0;background:var(--surface)}
   table.matrix td:first-child,table.matrix th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis}
-  table.matrix td.tot,table.matrix th.tot{font-weight:700;border-left:1px solid var(--line)}
+  table.matrix td.tot,table.matrix th.tot{font-weight:700}
+  table.matrix td.avg,table.matrix th.avg{border-right:1px solid var(--line-strong)}
   table.matrix tr.sum td{font-weight:700;border-top:2px solid var(--line-strong)}
   table.matrix td.z{color:var(--line-strong)}
   .catbar{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:8px 0}
@@ -1001,6 +1002,7 @@ function renderDashboard(){
           <div class="track"><div class="fill" style="width:${Math.max(3,v/maxCat*100)}%;background:${catColor(c)}"></div></div>
         </div>`).join(""):`<div class="muted" style="padding:10px 0">No spending in this view.</div>`}
     </div>
+    ${periodPicker(allMonthsTx)}
     ${trendCard(allMonthsTx)}
     ${categoryMatrixCard(allMonthsTx)}
     ${owners.length>1?`<div class="card pad mt">
@@ -1012,6 +1014,7 @@ function renderDashboard(){
     <div class="card pad mt">
       <h3 style="margin-bottom:10px">Biggest expenses</h3>${topExpenses(tx)}
     </div>`;
+  const dr=$("#dash-period");if(dr)dr.onchange=()=>{dashRange=dr.value;writeMeta({dashRange});renderDashboard();};
 }
 // Donut of spend by category: top 8 get their own slice, the rest are grouped as "Other".
 function donutChart(cats,total){
@@ -1036,9 +1039,23 @@ function donutChart(cats,total){
 }
 // ---- month-by-month views (ignore the month filter; respect the owner filter) ----
 const R0=n=>"R "+Math.round(n).toLocaleString("en-ZA");
-function lastMonths(tx,n){return[...new Set(tx.map(t=>monthKey(t.date)))].sort().slice(-n);}
+// Which months the two month-by-month cards show: the latest 12 months that have data, or every month of one year.
+// Always newest first, so the most recent month is the one on the left.
+let dashRange=readMeta().dashRange||"12";
+function periodMonths(tx,range){
+  const all=[...new Set(tx.map(t=>monthKey(t.date)))].sort().reverse();
+  return /^\d{4}$/.test(range)?all.filter(k=>k.startsWith(range+"-")):all.slice(0,12);
+}
+function periodPicker(tx){
+  const years=[...new Set(tx.map(t=>t.date.slice(0,4)))].sort().reverse();
+  if(!years.includes(dashRange)&&dashRange!=="12")dashRange="12";
+  return `<div class="row" style="margin-top:18px;align-items:center;gap:10px">
+    <label for="dash-period" class="sub" style="font-weight:600;white-space:nowrap">Month-by-month view</label>
+    <select id="dash-period" class="grow"><option value="12"${dashRange==="12"?" selected":""}>Latest 12 months</option>${years.map(y=>`<option value="${y}"${dashRange===y?" selected":""}>${y}</option>`).join("")}</select></div>`;
+}
+const periodLabel=n=>dashRange==="12"?`latest ${n} month${n>1?"s":""}`:`${dashRange}: ${n} month${n>1?"s":""}`;
 function trendCard(tx){
-  const months=lastMonths(tx,12);if(months.length<2)return"";
+  const months=periodMonths(tx,dashRange);if(months.length<2)return"";
   const inM={},outM={};
   tx.forEach(t=>{const k=monthKey(t.date);if(t.amt>0)inM[k]=(inM[k]||0)+t.amt;else outM[k]=(outM[k]||0)+Math.abs(t.amt);});
   const max=Math.max(1,...months.map(k=>Math.max(inM[k]||0,outM[k]||0)));
@@ -1050,11 +1067,11 @@ function trendCard(tx){
   return`<div class="card pad mt">
     <div class="between" style="margin-bottom:12px"><h3>Month by month</h3><span class="sub">avg out ${R0(avgOut)}/month</span></div>
     <div class="trend">${cols}</div>
-    <div class="legend"><span><i style="background:var(--in)"></i>Money in</span><span><i style="background:var(--out)"></i>Money out</span></div>
+    <div class="legend"><span><i style="background:var(--in)"></i>Money in</span><span><i style="background:var(--out)"></i>Money out</span><span>newest on the left</span></div>
   </div>`;
 }
 function categoryMatrixCard(tx){
-  const months=lastMonths(tx,12);if(!months.length)return"";
+  const months=periodMonths(tx,dashRange);if(!months.length)return"";
   const spend=tx.filter(t=>t.amt<0);if(!spend.length)return"";
   const grid={},rowTot={},colTot={};
   spend.forEach(t=>{const k=monthKey(t.date),a=Math.abs(t.amt);if(!months.includes(k))return;
@@ -1062,15 +1079,15 @@ function categoryMatrixCard(tx){
   const cats=Object.keys(rowTot).sort((a,b)=>rowTot[b]-rowTot[a]);
   const maxCell=Math.max(1,...cats.flatMap(c=>months.map(k=>grid[c][k]||0)));
   const grand=cats.reduce((a,c)=>a+rowTot[c],0);
-  const head=`<tr><th>Category</th>${months.map(k=>`<th>${monthLabel(k).replace(" 20"," '")}</th>`).join("")}<th class="tot">Total</th><th>Avg/mo</th></tr>`;
-  const rows=cats.map(c=>`<tr><td title="${esc(c)}">${esc(c)}</td>${months.map(k=>{const v=grid[c][k]||0;
-    return v?`<td class="amt" style="background:color-mix(in srgb,var(--out) ${Math.round(v/maxCell*38)}%,transparent)">${R0(v)}</td>`:`<td class="amt z">·</td>`;}).join("")}
-    <td class="amt tot">${R0(rowTot[c])}</td><td class="amt">${R0(rowTot[c]/months.length)}</td></tr>`).join("");
-  const foot=`<tr class="sum"><td>Total spent</td>${months.map(k=>`<td class="amt">${R0(colTot[k]||0)}</td>`).join("")}<td class="amt tot">${R0(grand)}</td><td class="amt">${R0(grand/months.length)}</td></tr>`;
+  // category, then the summary (Total, Avg/mo), then the months from newest to oldest
+  const head=`<tr><th>Category</th><th class="tot">Total</th><th class="avg">Avg/mo</th>${months.map(k=>`<th>${monthLabel(k).replace(" 20"," '")}</th>`).join("")}</tr>`;
+  const rows=cats.map(c=>`<tr><td title="${esc(c)}">${esc(c)}</td><td class="amt tot">${R0(rowTot[c])}</td><td class="amt avg">${R0(rowTot[c]/months.length)}</td>${months.map(k=>{const v=grid[c][k]||0;
+    return v?`<td class="amt" style="background:color-mix(in srgb,var(--out) ${Math.round(v/maxCell*38)}%,transparent)">${R0(v)}</td>`:`<td class="amt z">·</td>`;}).join("")}</tr>`).join("");
+  const foot=`<tr class="sum"><td>Total spent</td><td class="amt tot">${R0(grand)}</td><td class="amt avg">${R0(grand/months.length)}</td>${months.map(k=>`<td class="amt">${R0(colTot[k]||0)}</td>`).join("")}</tr>`;
   return`<div class="card pad mt">
-    <div class="between" style="margin-bottom:10px"><h3>Spend per category, per month</h3><span class="sub">last ${months.length} month${months.length>1?"s":""}</span></div>
+    <div class="between" style="margin-bottom:10px"><h3>Spend per category, per month</h3><span class="sub">${periodLabel(months.length)}</span></div>
     <div class="matrix-wrap"><table class="matrix"><thead>${head}</thead><tbody>${rows}${foot}</tbody></table></div>
-    <div class="hint">Darker = more spent that month. Transfers between your own accounts are left out.</div>
+    <div class="hint">Newest month on the left. Darker = more spent that month. Transfers between your own accounts are left out.</div>
   </div>`;
 }
 function topExpenses(tx){const top=tx.filter(t=>t.amt<0).sort((a,b)=>a.amt-b.amt).slice(0,8);
