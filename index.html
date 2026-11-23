@@ -51,7 +51,7 @@
   button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
   button.primary:hover{filter:brightness(1.06)}
-  button.ghost{border-color:transparent;background:transparent;min-height:auto;padding:8px 10px}
+  button.ghost{border-color:transparent;background:transparent;min-height:40px;min-width:40px;padding:8px 10px}
   button.ghost:hover{background:var(--surface-2)}
   button.danger{color:var(--out);border-color:var(--out-soft)}
   select,input[type=text],input[type=month],input[type=number]{font-family:inherit;font-size:16px;
@@ -77,16 +77,22 @@
   .privacy .txt{display:none}
 
   /* bottom nav (mobile) */
-  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;width:100%;z-index:30;display:flex;
     background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -2px 12px rgba(24,32,41,.06);
-    padding-bottom:env(safe-area-inset-bottom,0)}
-  .bottomnav button{flex:1;border:none;background:transparent;border-radius:0;min-height:58px;
+    padding-bottom:env(safe-area-inset-bottom,0);
+    transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden}   /* keeps it pinned while the page scrolls */
+  .bottomnav button{flex:1 1 0;min-width:0;border:none;background:transparent;border-radius:0;min-height:60px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    font-size:11px;color:var(--ink-faint);padding:7px 2px}
-  .bottomnav button .ic{font-size:19px;line-height:1}
+    font-size:9.5px;letter-spacing:-.03em;color:var(--ink-faint);padding:7px 0}
+  .bottomnav button .lb{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bottomnav button .ic{width:24px;height:24px;font-size:19px;line-height:24px;text-align:center;display:block}
+  /* a custom icon (a white-on-transparent PNG in icons/) replaces the emoji and takes the tab's colour */
+  .ic.has-icon,.bottomnav button .ic.has-icon{font-size:0;color:inherit;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
   .bottomnav button.active{color:var(--accent-ink);font-weight:600}
+  @media (max-width:380px){.bottomnav button{font-size:9px;letter-spacing:-.04em}}
+  @media (min-width:420px){.bottomnav button{font-size:10.5px;letter-spacing:-.02em}}
 
-  main{max-width:1080px;margin:0 auto;padding:18px 16px 92px}
+  main{max-width:1080px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
   .view{display:none}
   .view.active{display:block;animation:fade .18s ease}
   @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -104,7 +110,7 @@
 
   .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
   .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow)}
-  .tile .l{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-family:ui-monospace,Consolas,monospace}
+  .tile .l{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-family:ui-monospace,Consolas,monospace}
   .tile .v{font-size:23px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
 
   .donut-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center;padding:8px 0 18px;margin-bottom:8px;border-bottom:1px solid var(--line)}
@@ -126,13 +132,13 @@
   .trend .m{flex:1 0 46px;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
   .trend .bars{display:flex;gap:3px;align-items:flex-end;height:calc(100% - 20px);width:100%;justify-content:center}
   .trend .b{width:40%;max-width:18px;border-radius:4px 4px 0 0;min-height:2px}
-  .trend .lbl{font-size:11px;color:var(--ink-faint);white-space:nowrap}
+  .trend .lbl{font-size:12px;color:var(--ink-faint);white-space:nowrap}
   .legend{display:flex;gap:14px;font-size:12px;color:var(--ink-faint);margin-top:10px}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
   .matrix-wrap{overflow-x:auto;margin:0 -4px}
   table.matrix{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
   table.matrix th,table.matrix td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
-  table.matrix th{font-weight:600;color:var(--ink-faint);font-size:11.5px;position:sticky;top:0;background:var(--surface)}
+  table.matrix th{font-weight:600;color:var(--ink-faint);font-size:12px;position:sticky;top:0;background:var(--surface)}
   table.matrix td:first-child,table.matrix th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis}
   table.matrix td.tot,table.matrix th.tot{font-weight:700;border-left:1px solid var(--line)}
   table.matrix tr.sum td{font-weight:700;border-top:2px solid var(--line-strong)}
@@ -163,10 +169,10 @@
   .c-cat select{width:100%}
   .c-amt{grid-area:amt;text-align:right;white-space:nowrap;font-weight:700;align-self:center}
   .c-del{grid-area:del;text-align:right;align-self:center}
-  .ownertag{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+  .ownertag{font-size:12px;padding:3px 9px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
   .desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  .pill{display:inline-block;font-size:11px;font-family:ui-monospace,Consolas,monospace;padding:2px 8px;border-radius:20px;font-weight:600}
+  .pill{display:inline-block;font-size:12px;font-family:ui-monospace,Consolas,monospace;padding:2px 8px;border-radius:20px;font-weight:600}
   .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
   .kv:last-child{border-bottom:none}
   .banner{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent-ink);border-radius:var(--radius);padding:12px 14px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px}
@@ -176,22 +182,43 @@
   .preview{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
   .preview table{border-collapse:collapse;width:100%;font-size:12px;min-width:420px}
   .preview th,.preview td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-  .preview th{background:var(--surface-2);color:var(--ink-faint);font-size:10px;text-transform:uppercase}
+  .preview th{background:var(--surface-2);color:var(--ink-faint);font-size:12px;text-transform:uppercase}
   .hint{font-size:12.5px;color:var(--ink-faint);margin-top:4px}
   .drop{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:28px 18px;text-align:center;color:var(--ink-faint);background:var(--surface-2)}
   .drop.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
 
-  .ruleitem{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ruleitem{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ruleitem .grow{min-width:0}
+  .ruleitem .ctl{display:flex;align-items:center;gap:6px;margin-left:auto}
+  .ruleitem button.ghost{min-width:40px;min-height:40px}
   .ruleitem .kw{flex:1;min-width:110px}
-  .chipcat{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600;color:#fff;white-space:nowrap}
+  .chipcat{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600;color:#fff;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 
-  .split{display:grid;grid-template-columns:1fr;gap:14px}
+  .split{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+  .split>*,.card{min-width:0}
 
   .toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);
     padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:var(--shadow);max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* ---------- desktop enhancements ---------- */
+  /* ---- phones ---- */
+  html{overscroll-behavior-y:contain;-webkit-tap-highlight-color:transparent}      /* no accidental pull-to-refresh while editing */
+  button,a,select,input,label,summary{touch-action:manipulation}                   /* no double-tap zoom delay */
+  input[type=date],input[type=password],input[type=search]{font-family:inherit;font-size:16px;padding:11px 12px;min-height:44px;
+    border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+  input.tdate{font-size:14px;min-height:40px;padding:5px 7px;border-color:var(--line);background:transparent}
+  input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--accent)}
+  .chk{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 6px 0 0;font-size:14px;color:var(--ink)}
+  @media (max-width:759px){
+    .catbar{grid-template-columns:minmax(0,1fr) auto}
+    .catbar .val{white-space:normal;text-align:right}
+    .catbar .val .muted{display:block;font-size:12.5px}
+    .fnote{font-size:13px}
+    .row{gap:10px}
+    .grow{min-width:0}
+    h2.title{font-size:22px}
+  }
   @media (min-width:760px){
     .top-inner{height:60px;padding:0 20px}
     nav.tabs{display:flex}
@@ -202,10 +229,10 @@
     h2.title{font-size:24px}
     .tiles{grid-template-columns:repeat(4,1fr)}
     .tile .v{font-size:26px}
-    .catbar{grid-template-columns:160px 1fr 130px}
+    .catbar{grid-template-columns:160px minmax(0,1fr) minmax(130px,max-content)}
     .catbar .track{grid-column:auto;order:0}
     .toast{bottom:24px}
-    .split{grid-template-columns:1fr 1fr}
+    .split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
     .maprow{grid-template-columns:180px 1fr;align-items:center;gap:12px}
     .maprow label{font-weight:400;color:var(--ink-soft)}
     .txhead{display:grid}
@@ -227,10 +254,10 @@
   .ring-inner{position:absolute;inset:11px;border-radius:50%;background:var(--surface);
     display:flex;flex-direction:column;align-items:center;justify-content:center}
   .ring-num{font-size:32px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-  .ring-lbl{font-size:11px;color:var(--ink-faint)}
+  .ring-lbl{font-size:12px;color:var(--ink-faint)}
   .band{display:inline-block;font-size:12px;font-weight:700;padding:3px 11px;border-radius:20px;margin-bottom:6px}
   .metric .big{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
-  .metric .cap{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;font-family:ui-monospace,Consolas,monospace}
+  .metric .cap{font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;font-family:ui-monospace,Consolas,monospace}
   .split-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;background:var(--surface-2);margin:12px 0 8px}
   .seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;min-width:0;overflow:hidden}
   .seg.need{background:#3b6ea5}.seg.want{background:#c07a3e}.seg.save{background:var(--in)}
@@ -255,9 +282,9 @@
   .ef-field{display:flex;flex-direction:column;gap:4px}
   .ef-field label{font-size:12px}
   .ef-field input,.ef-field select{width:150px}
-  .classsel{padding:5px 8px;font-size:12.5px;min-height:auto}
-  .tdate{font-size:12.5px;padding:5px 7px;min-height:auto;width:100%;max-width:160px;border-color:var(--line);background:transparent}
-  .grouphdr{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  .classsel{padding:5px 8px;font-size:14px;min-height:40px}
+  .tdate{font-size:14px;padding:5px 7px;min-height:40px;width:100%;max-width:170px;border-color:var(--line);background:transparent}
+  .grouphdr{font-family:ui-monospace,Consolas,monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--accent-ink);margin:16px 0 4px;padding-top:8px;border-top:1px solid var(--line);font-weight:700}
   .grouphdr:first-child{border-top:none;padding-top:0;margin-top:4px}
 </style>
@@ -268,10 +295,10 @@
   <div class="top-inner">
     <div class="brand"><img class="mark" src="mark.png" alt="" width="62" height="28"> <span>Mu<span class="stash">Stash</span></span></div>
     <nav class="tabs nav-set">
-      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="dashboard" class="active">Home</button>
       <button data-view="transactions">Transactions</button>
       <button data-view="coach">Coach</button>
-      <button data-view="fair">Fair share</button>
+      <button data-view="fair">Split</button>
       <button data-view="import">Import</button>
       <button data-view="rules">Rules</button>
       <button data-view="settings">Settings</button>
@@ -323,7 +350,7 @@
   <!-- FAIR SHARE -->
   <section class="view" id="view-fair">
     <div class="between" style="margin-bottom:14px">
-      <div><h2 class="title">Fair share</h2><div class="sub">Who spends what, and whether you are each contributing fairly to the shared costs.</div></div>
+      <div><h2 class="title">Split</h2><div class="sub">Who spends what, and whether you are each contributing fairly to the shared costs.</div></div>
     </div>
     <div class="row" style="margin-bottom:16px">
       <select id="fair-month" class="grow"></select>
@@ -376,6 +403,12 @@
   <section class="view" id="view-settings">
     <h2 class="title">Settings</h2>
     <div class="sub" style="margin-bottom:14px">Manage categories, people, and your data.</div>
+    <div class="card pad" style="margin-bottom:14px">
+      <div class="between">
+        <div><h3>Rules</h3><div class="sub">Add keyword rules so new transactions are sorted for you.</div></div>
+        <button class="primary" onclick="switchView('rules')">Add or edit rules →</button>
+      </div>
+    </div>
     <div class="split">
       <div class="card pad">
         <h3 style="margin-bottom:10px">Categories</h3>
@@ -401,12 +434,6 @@
         <div id="owner-list"></div>
       </div>
     </div>
-    <div class="card pad mt">
-      <div class="between">
-        <div><h3>Auto-categorise rules</h3><div class="sub">Keyword → category rules used when importing.</div></div>
-        <button onclick="switchView('rules')">Manage rules →</button>
-      </div>
-    </div>
     <div class="card pad mt" id="sync-card"></div>
     <div class="card pad mt">
       <h3 style="margin-bottom:6px">Backup &amp; restore</h3>
@@ -428,12 +455,13 @@
 </main>
 
 <nav class="bottomnav nav-set">
-  <button data-view="dashboard" class="active"><span class="ic">📊</span>Home</button>
-  <button data-view="transactions"><span class="ic">🧾</span>Money</button>
-  <button data-view="coach"><span class="ic">🧭</span>Coach</button>
-  <button data-view="fair"><span class="ic">⚖️</span>Fair</button>
-  <button data-view="import"><span class="ic">⬆️</span>Import</button>
-  <button data-view="settings"><span class="ic">⚙️</span>Settings</button>
+  <button data-view="dashboard" class="active" aria-label="Home"><span class="ic" data-icon="home">📊</span><span class="lb">Home</span></button>
+  <button data-view="transactions" aria-label="Transactions"><span class="ic" data-icon="transaction">🧾</span><span class="lb">Transactions</span></button>
+  <button data-view="coach" aria-label="Coach"><span class="ic" data-icon="coach">🧭</span><span class="lb">Coach</span></button>
+  <button data-view="fair" aria-label="Split"><span class="ic" data-icon="fairshare">⚖️</span><span class="lb">Split</span></button>
+  <button data-view="import" aria-label="Import"><span class="ic" data-icon="import">⬆️</span><span class="lb">Import</span></button>
+  <button data-view="rules" aria-label="Rules"><span class="ic" data-icon="rules">🛡️</span><span class="lb">Rules</span></button>
+  <button data-view="settings" aria-label="Settings"><span class="ic" data-icon="setting">⚙️</span><span class="lb">Settings</span></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -1134,16 +1162,16 @@ function renderSettings(){
       <div class="hint" style="flex-basis:100%;margin:0">${txCount(c)} transaction${txCount(c)!==1?"s":""} use this. Renaming updates them all, plus rules and budgets. Use another category's exact name to merge the two.</div></div>`;
     const locked=PROTECTED_CATS.includes(c);
     return `<div class="ruleitem">
-    <span class="chipcat" style="background:${catColor(c)}">${esc(c)}</span><span class="grow"></span>
+    <span class="chipcat" style="background:${catColor(c)}">${esc(c)}</span><span class="ctl">
     <select class="classsel" data-c="${esc(c)}">
       <option value="need">Need</option><option value="want">Want</option>
       <option value="save">Save</option><option value="transfer">Transfer</option><option value="income">Income</option></select>
     ${locked?`<span class="muted" title="The app uses this category by name" style="padding:0 10px">🔒</span>`:
-      `<button class="ghost cat-edit" data-c="${esc(c)}" title="Rename, merge or move to another group">✎</button><button class="ghost del" data-c="${esc(c)}" title="Delete">✕</button>`}</div>`;};
+      `<button class="ghost cat-edit" data-c="${esc(c)}" title="Rename, merge or move to another group">✎</button><button class="ghost del" data-c="${esc(c)}" title="Delete">✕</button>`}</span></div>`;};
   const groupHdr=g=>editGroup===g
     ?`<div class="ruleitem" style="flex-wrap:wrap"><input type="text" class="grow group-edit-name" value="${esc(g)}" style="min-width:160px">
         <button class="primary group-edit-save" data-g="${esc(g)}">Save</button><button class="ghost group-edit-cancel">Cancel</button></div>`
-    :`<div class="grouphdr">${esc(g)} <button class="ghost group-edit" data-g="${esc(g)}" title="Rename this group" style="padding:2px 8px;min-height:0">✎</button></div>`;
+    :`<div class="grouphdr">${esc(g)} <button class="ghost group-edit" data-g="${esc(g)}" title="Rename this group" style="padding:4px 12px;min-height:38px;vertical-align:middle">✎</button></div>`;
   let html=`<div class="sub" style="margin-bottom:10px">Grouped for clarity. Tag each as Need / Want / Save (powers the Coach's 50/30/20). Use <b>Transfer</b> for money moving between your own or each other's accounts, which is left out of all totals so nothing double-counts. Tap <b>✎</b> to rename a category or group, move it, or merge it into another. Renaming updates every existing transaction, rule and budget.</div>`;
   for(const g of groupList()){const cs=S.categories.filter(c=>groupOf(c)===g);if(!cs.length)continue;
     html+=groupHdr(g)+cs.map(catRow).join("");}
@@ -1273,7 +1301,7 @@ function renderFair(){
   const chooser=groupList().map(g=>{const cs=S.categories.filter(c=>groupOf(c)===g&&["need","want"].includes(getClass(c)));
     if(!cs.length)return"";
     return`<div style="margin:12px 0 4px;font-weight:700;font-size:13px">${esc(g)}</div><div class="row" style="gap:6px 18px">${cs.map(c=>
-      `<label style="display:flex;gap:6px;align-items:center;font-size:14px"><input type="checkbox" class="fair-cat" value="${esc(c)}" ${shared.has(c)?"checked":""}> ${esc(c)}</label>`).join("")}</div>`;}).join("");
+      `<label class="chk"><input type="checkbox" class="fair-cat" value="${esc(c)}" ${shared.has(c)?"checked":""}> ${esc(c)}</label>`).join("")}</div>`;}).join("");
   const chooseCard=`<div class="card pad mt"><details ${fairOpen?"open":""}><summary style="cursor:pointer;font-weight:700">Which categories are shared costs? (${shared.size} chosen)</summary>
     <div class="hint" style="margin-top:8px">Tick the things you both benefit from, such as rent or bond, levies, groceries, utilities and insurance. Personal spending stays out of the fairness calculation.</div>${chooser}
     <div class="hint" style="margin-top:12px">When one of you sends the other money towards shared costs, give those transactions the category <b>Partner contribution</b> (use Rules to do it automatically). Otherwise that money is ignored.</div></details></div>`;
@@ -1662,6 +1690,10 @@ renderAll();
 if(syncReady())runSync(false);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&syncReady()&&Date.now()-(syncCfg.last||0)>60000)runSync(false);});
 window.addEventListener("online",()=>runSync(false));
+document.querySelectorAll(".ic[data-icon]").forEach(el=>{
+  const url=new URL("icons/"+el.dataset.icon+".png",location.href).href,im=new Image();
+  im.onload=()=>{el.style.setProperty("--icon","url("+url+")");el.classList.add("has-icon");};
+  im.src=url;});
 // lets the app open offline once it has been loaded (only on a real web address)
 if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
