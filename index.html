@@ -83,14 +83,14 @@
     transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden}   /* keeps it pinned while the page scrolls */
   .bottomnav button{flex:1 1 0;min-width:0;border:none;background:transparent;border-radius:0;min-height:60px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    font-size:9.5px;letter-spacing:-.03em;color:var(--ink-faint);padding:7px 0}
+    font-size:10.5px;letter-spacing:-.01em;color:var(--ink-faint);padding:7px 1px}
   .bottomnav button .lb{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bottomnav button .ic{width:24px;height:24px;font-size:19px;line-height:24px;text-align:center;display:block}
   /* a custom icon (a white-on-transparent PNG in icons/) replaces the emoji and takes the tab's colour */
   .ic.has-icon,.bottomnav button .ic.has-icon{font-size:0;color:inherit;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
   .bottomnav button.active{color:var(--accent-ink);font-weight:600}
-  @media (max-width:380px){.bottomnav button{font-size:9px;letter-spacing:-.04em}}
-  @media (min-width:420px){.bottomnav button{font-size:10.5px;letter-spacing:-.02em}}
+  @media (max-width:360px){.bottomnav button{font-size:10px;letter-spacing:-.02em}}
+  @media (min-width:420px){.bottomnav button{font-size:11px}}
 
   main{max-width:1080px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
   .view{display:none}
@@ -128,6 +128,19 @@
   .stnote{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:14px;line-height:1.45}
   .stnote.bad{background:var(--out-soft);color:var(--out)}
   .stnote.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--warn)}
+  /* app lock */
+  #lock{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;align-items:center;justify-content:center;
+    padding:24px;padding-top:max(24px,env(safe-area-inset-top))}
+  html.locked #lock,html.covered #lock{display:flex}
+  html.locked body>*:not(#lock),html.covered body>*:not(#lock){visibility:hidden}
+  html.covered:not(.locked) .lock-box>*:not(.lock-logo){display:none}     /* in the recent-apps view: the logo only, no data */
+  .lock-box{width:min(340px,100%);text-align:center}
+  .lock-logo{height:48px;width:auto;border-radius:10px;margin-bottom:18px}
+  .lock-title{font-size:22px;font-weight:800;margin-bottom:6px}
+  #lock-pin{width:100%;text-align:center;font-size:22px;letter-spacing:.18em;min-height:52px}
+  #lock-pin::placeholder{font-size:15px;letter-spacing:0}
+  .lock-msg{min-height:24px;margin:10px 0;color:var(--out);font-size:14px}
+  .lock-btn{font-size:17px;padding:6px 10px}
   .trend{display:flex;gap:10px;align-items:flex-end;height:150px;overflow-x:auto;padding-bottom:2px}
   .trend .m{flex:1 0 46px;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
   .trend .bars{display:flex;gap:3px;align-items:flex-end;height:calc(100% - 20px);width:100%;justify-content:center}
@@ -290,6 +303,18 @@
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem("ourmoney.lock"))document.documentElement.classList.add("locked");}catch(e){}</script>
+<div id="lock" role="dialog" aria-modal="true" aria-label="MuStash is locked">
+  <div class="lock-box">
+    <img class="lock-logo" src="mark.png" alt="">
+    <div class="lock-title">MuStash is locked</div>
+    <div class="sub" style="margin-bottom:14px">Enter your PIN or password to open it.</div>
+    <input type="password" id="lock-pin" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="PIN or password" aria-label="PIN or password">
+    <div class="lock-msg" id="lock-msg" role="alert"></div>
+    <button class="primary" id="lock-go" style="width:100%">Unlock</button>
+    <button class="ghost" id="lock-forgot" style="margin-top:8px">Forgot PIN?</button>
+  </div>
+</div>
 
 <header class="top">
   <div class="top-inner">
@@ -304,6 +329,7 @@
       <button data-view="settings">Settings</button>
     </nav>
     <div class="top-spacer"></div>
+    <button id="lock-now" class="ghost lock-btn" title="Lock MuStash" aria-label="Lock MuStash" style="display:none">🔒</button>
     <div class="privacy" title="All data is stored only on this device. Nothing is uploaded."><span class="txt">Private · on this device</span></div>
   </div>
 </header>
@@ -409,6 +435,7 @@
         <button class="primary" onclick="switchView('rules')">Add or edit rules →</button>
       </div>
     </div>
+    <div class="card pad" id="lock-card" style="margin-bottom:14px"></div>
     <div class="split">
       <div class="card pad">
         <h3 style="margin-bottom:10px">Categories</h3>
@@ -460,7 +487,6 @@
   <button data-view="coach" aria-label="Coach"><span class="ic" data-icon="coach">🧭</span><span class="lb">Coach</span></button>
   <button data-view="fair" aria-label="Split"><span class="ic" data-icon="fairshare">⚖️</span><span class="lb">Split</span></button>
   <button data-view="import" aria-label="Import"><span class="ic" data-icon="import">⬆️</span><span class="lb">Import</span></button>
-  <button data-view="rules" aria-label="Rules"><span class="ic" data-icon="rules">🛡️</span><span class="lb">Rules</span></button>
   <button data-view="settings" aria-label="Settings"><span class="ic" data-icon="setting">⚙️</span><span class="lb">Settings</span></button>
 </nav>
 
@@ -470,6 +496,7 @@
 <script src="sync.js"></script>
 <script src="sync-config.js"></script>
 <script src="sync-drive.js"></script>
+<script src="applock.js"></script>
 <script>
 "use strict";
 /* ---------- storage ---------- */
@@ -1482,6 +1509,7 @@ function renderCoach(){
 
 /* ---------- views ---------- */
 function switchView(v){
+  if(v==="settings"&&typeof renderLockCard==="function")renderLockCard();
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
   $("#view-"+v).classList.add("active");
   document.querySelectorAll(".nav-set button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
@@ -1615,6 +1643,90 @@ function renderSync(){
   const pi=el.querySelector("#sync-pass");if(pi)pi.oninput=()=>{syncPassDraft=pi.value;};
 }
 
+/* ---------- app lock (the check itself lives in applock.js) ---------- */
+const LOCK_KEY="ourmoney.lock";                 // this phone only: it is never synced or included in backups
+const lockAvailable=()=>typeof makeLock==="function"&&!!(window.crypto&&crypto.subtle);
+const getLock=()=>{try{return JSON.parse(localStorage.getItem(LOCK_KEY)||"null");}catch(e){return null;}};
+const putLock=c=>{try{c?localStorage.setItem(LOCK_KEY,JSON.stringify(c)):localStorage.removeItem(LOCK_KEY);}catch(e){}};
+const rootEl=document.documentElement;
+const LOCK_TIMES=[[0,"Right away"],[1,"After 1 minute"],[5,"After 5 minutes"],[15,"After 15 minutes"]];
+function lockWaitText(c){const w=c?lockWait(c):0;return w?"Too many tries. Try again in "+(w>90?Math.ceil(w/60)+" minutes":w+" seconds")+".":"";}
+function showLock(){
+  if(!getLock()||!lockAvailable())return;
+  rootEl.classList.add("locked");rootEl.classList.remove("covered");
+  const p=$("#lock-pin");p.value="";$("#lock-msg").textContent=lockWaitText(getLock());setTimeout(()=>p.focus(),80);
+}
+function hideLock(){rootEl.classList.remove("locked","covered");}
+async function tryUnlock(){
+  const cfg=getLock();if(!cfg){hideLock();return;}
+  const pin=$("#lock-pin").value;if(!pin)return;
+  const go=$("#lock-go");go.disabled=true;
+  let r;try{r=await checkPin(cfg,pin);}catch(e){$("#lock-msg").textContent="Could not check the PIN on this device.";go.disabled=false;return;}
+  putLock(r.cfg);go.disabled=false;
+  if(r.ok){hideLock();return;}
+  $("#lock-pin").value="";$("#lock-msg").textContent=r.wait?lockWaitText(r.cfg):"Wrong PIN. Try again.";$("#lock-pin").focus();
+}
+// The one way back in without the PIN: erase this phone's copy and remove the lock. Synced data comes back; nothing else does.
+function forgotPin(){
+  if(!confirm("Forgot your PIN?\n\nThe only way in is to erase MuStash's data on this phone and remove the lock. If you use sync, or have a backup file, you can get your data back afterwards. Without either, it is gone.\n\nErase this phone's MuStash data?"))return;
+  if(!confirm("Last check: erase MuStash's data on this phone?"))return;
+  try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+".before-restore");}catch(e){}
+  putLock(null);S=fresh();baseline();hideLock();renderAll();toast("Erased. Reconnect sync or restore a backup to get your data back.");
+}
+// Cover the screen the moment MuStash goes to the background (so the recent-apps picture shows nothing), and lock after the chosen time away.
+let hiddenAt=0;
+document.addEventListener("visibilitychange",()=>{
+  const cfg=getLock();if(!cfg||!lockAvailable())return;
+  if(document.hidden){hiddenAt=Date.now();rootEl.classList.add("covered");}
+  else{
+    const away=hiddenAt?Date.now()-hiddenAt:Infinity;hiddenAt=0;
+    if(away>=(cfg.timeout||0)*60000)showLock();else rootEl.classList.remove("covered");
+  }
+});
+
+function renderLockCard(){
+  const lockBtn=$("#lock-now"),cfg=getLock();
+  if(lockBtn)lockBtn.style.display=cfg&&lockAvailable()?"":"none";
+  const el=$("#lock-card");if(!el)return;
+  const head='<h3 style="margin-bottom:8px">App lock</h3>';
+  if(!lockAvailable()){el.innerHTML=head+'<div class="sub">App lock is not available here. It needs the secure web address (https) or the installed app.</div>';return;}
+  const timeSel=cur=>'<select id="lk-time">'+LOCK_TIMES.map(([m,l])=>'<option value="'+m+'"'+(m===cur?" selected":"")+">"+l+"</option>").join("")+"</select>";
+  const pinFields=(withCurrent)=>(withCurrent?'<div class="maprow"><label>Current PIN</label><input type="password" id="lk-cur" autocomplete="off" inputmode="numeric"></div>':"")+
+    '<div class="maprow"><label>'+(withCurrent?"New":"Choose a")+' PIN or password</label><input type="password" id="lk-new" autocomplete="new-password" inputmode="numeric" placeholder="at least 4 characters"></div>'+
+    '<div class="maprow"><label>Type it again</label><input type="password" id="lk-new2" autocomplete="new-password" inputmode="numeric"></div>'+
+    '<label class="chk"><input type="checkbox" id="lk-letters"> Use letters as well (stronger)</label>';
+  if(!cfg){
+    el.innerHTML=head+'<div class="sub" style="margin-bottom:12px">Put a PIN or password on MuStash, so anyone who picks up your phone cannot see your money. You type it when you open the app and after it has been in the background for the time you choose. This lock is for <b>this phone only</b>: your partner sets their own.</div>'+
+      pinFields(false)+'<div class="maprow"><label>Lock the app</label>'+timeSel(1)+'</div>'+
+      '<div class="row" style="margin-top:6px"><button class="primary" id="lk-on">Turn on app lock</button></div><div class="hint" id="lk-msg" style="min-height:20px"></div>';
+  }else{
+    el.innerHTML=head+'<div class="sub" style="margin-bottom:12px">App lock is <b>on</b> for this phone.</div>'+
+      '<div class="row" style="margin-bottom:14px"><button class="primary" id="lk-now">Lock now</button><span class="grow"></span></div>'+
+      '<div class="maprow"><label>Lock the app</label>'+timeSel(cfg.timeout||0)+'</div>'+
+      '<details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600;min-height:40px;display:flex;align-items:center">Change PIN</summary>'+pinFields(true)+'<div class="row"><button id="lk-change">Change PIN</button></div></details>'+
+      '<details style="margin-top:4px"><summary style="cursor:pointer;font-weight:600;min-height:40px;display:flex;align-items:center">Turn off app lock</summary><div class="maprow"><label>Current PIN</label><input type="password" id="lk-off-pin" autocomplete="off" inputmode="numeric"></div><div class="row"><button class="danger" id="lk-off">Turn off app lock</button></div></details>'+
+      '<div class="hint" id="lk-msg" style="min-height:20px"></div>';
+  }
+  const msg=t=>{const m=el.querySelector("#lk-msg");if(m)m.textContent=t;};
+  el.querySelectorAll("#lk-letters").forEach(c=>c.onchange=()=>el.querySelectorAll("#lk-new,#lk-new2").forEach(i=>i.inputMode=c.checked?"text":"numeric"));
+  const newPin=()=>{const a=el.querySelector("#lk-new").value,b=el.querySelector("#lk-new2").value;
+    if(a!==b){msg("The two do not match.");return null;}const p=pinProblem(a);if(p){msg(p);return null;}return a;};
+  const verify=async(pin)=>{const r=await checkPin(getLock(),pin);putLock(r.cfg);if(!r.ok)msg(r.wait?lockWaitText(r.cfg):"That is not the current PIN.");return r.ok;};
+  const on=(id,fn)=>{const b=el.querySelector(id);if(b)b.onclick=fn;};
+  on("#lk-on",async()=>{const p=newPin();if(!p)return;putLock(await makeLock(p,+el.querySelector("#lk-time").value));toast("App lock is on");renderLockCard();});
+  on("#lk-now",()=>showLock());
+  on("#lk-change",async()=>{const p=newPin();if(!p)return;if(!(await verify(el.querySelector("#lk-cur").value)))return;const t=getLock().timeout;putLock(await makeLock(p,t));toast("PIN changed");renderLockCard();});
+  on("#lk-off",async()=>{if(!(await verify(el.querySelector("#lk-off-pin").value)))return;putLock(null);toast("App lock is off");renderLockCard();});
+  const ts=el.querySelector("#lk-time");
+  if(ts&&cfg)ts.onchange=()=>{putLock({...getLock(),timeout:+ts.value});toast("Saved");};
+}
+$("#lock-go").onclick=tryUnlock;
+$("#lock-pin").addEventListener("keydown",e=>{if(e.key==="Enter")tryUnlock();});
+$("#lock-forgot").onclick=forgotPin;
+$("#lock-now").onclick=()=>showLock();
+// if a lock exists but this browser cannot check it (no secure address), do not trap the user outside their own app
+if(getLock()&&!lockAvailable())hideLock();
+
 /* ---------- events ---------- */
 document.querySelectorAll(".nav-set").forEach(n=>n.addEventListener("click",e=>{
   const b=e.target.closest("button[data-view]");if(b)switchView(b.dataset.view);}));
@@ -1687,6 +1799,8 @@ $("#cat-new").addEventListener("keydown",e=>{if(e.key==="Enter")$("#cat-add").cl
 $("#owner-new").addEventListener("keydown",e=>{if(e.key==="Enter")$("#owner-add").click();});
 
 renderAll();
+renderLockCard();
+if(getLock()&&lockAvailable())showLock();
 if(syncReady())runSync(false);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&syncReady()&&Date.now()-(syncCfg.last||0)>60000)runSync(false);});
 window.addEventListener("online",()=>runSync(false));
