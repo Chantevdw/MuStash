@@ -1,0 +1,15 @@
+{
+  "name": "MuStash",
+  "short_name": "MuStash",
+  "description": "A private budgeting app for two. Your data stays on your phones and in your own encrypted file.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#012e2b",
+  "theme_color": "#012e2b",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

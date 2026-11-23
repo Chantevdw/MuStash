@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#012e2b">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>MuStash — budgeting for two</title>
+<style>
+  :root{
+    --bg:#eef1f4; --surface:#ffffff; --surface-2:#f4f6f9; --ink:#182029; --ink-soft:#4a5563;
+    --ink-faint:#7a8694; --line:#e0e5ea; --line-strong:#cdd4dc;
+    --accent:#1f7a68; --accent-soft:#e4f1ee; --accent-ink:#155e50;
+    --in:#1f8a5b; --out:#b8503f; --out-soft:#f7e7e3; --in-soft:#e2f1ea;
+    --warn:#b07d1c;
+    --radius:12px; --shadow:0 1px 2px rgba(24,32,41,.05),0 8px 26px rgba(24,32,41,.06);
+    --cat0:#1f7a68;--cat1:#3b6ea5;--cat2:#b07d1c;--cat3:#8a5cb8;--cat4:#c05a8d;
+    --cat5:#4a9d8e;--cat6:#c07a3e;--cat7:#5b8a3a;--cat8:#a34e4e;--cat9:#5f6b7a;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f141a; --surface:#171d25; --surface-2:#1c232c; --ink:#e6ebf0; --ink-soft:#aeb8c4;
+      --ink-faint:#78838f; --line:#28313b; --line-strong:#3a4552;
+      --accent:#4fc0a8; --accent-soft:#132a26; --accent-ink:#6fd0ba;
+      --in:#5cbd8a; --in-soft:#13291f; --out:#e08874; --out-soft:#2c1a16;
+      --warn:#d8a24a; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+      --bg:#0f141a; --surface:#171d25; --surface-2:#1c232c; --ink:#e6ebf0; --ink-soft:#aeb8c4;
+      --ink-faint:#78838f; --line:#28313b; --line-strong:#3a4552;
+      --accent:#4fc0a8; --accent-soft:#132a26; --accent-ink:#6fd0ba;
+      --in:#5cbd8a; --in-soft:#13291f; --out:#e08874; --out-soft:#2c1a16;
+      --warn:#d8a24a; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-sans-serif,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .mono,.amt{font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;font-variant-numeric:tabular-nums}
+  h1,h2,h3{margin:0;letter-spacing:-.01em}
+
+  /* controls — mobile-first: big tap targets, 16px inputs (no iOS zoom) */
+  button{font-family:inherit;font-size:15px;cursor:pointer;border-radius:9px;border:1px solid var(--line-strong);
+    background:var(--surface);color:var(--ink);padding:11px 15px;min-height:44px;transition:background .12s,border-color .12s}
+  button:hover{background:var(--surface-2)}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{filter:brightness(1.06)}
+  button.ghost{border-color:transparent;background:transparent;min-height:auto;padding:8px 10px}
+  button.ghost:hover{background:var(--surface-2)}
+  button.danger{color:var(--out);border-color:var(--out-soft)}
+  select,input[type=text],input[type=month],input[type=number]{font-family:inherit;font-size:16px;
+    padding:11px 12px;min-height:44px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+  label{font-size:14px;color:var(--ink-soft)}
+  a{color:var(--accent-ink)}
+
+  /* top bar */
+  header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+    padding-top:env(safe-area-inset-top,0)}
+  .top-inner{max-width:1080px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:12px;height:54px}
+  .brand{font-weight:800;font-size:17px;display:flex;align-items:center;gap:9px;letter-spacing:-.02em}
+  .brand .mark{height:28px;width:auto;border-radius:6px;display:block}
+  .brand .stash{color:var(--warn)}
+  .brand .dot{width:11px;height:11px;border-radius:3px;background:var(--accent);transform:rotate(45deg)}
+  nav.tabs{display:none;gap:2px;margin-left:6px;flex-wrap:wrap}
+  nav.tabs button{border:none;background:transparent;color:var(--ink-soft);padding:8px 12px;border-radius:8px;font-weight:600;min-height:auto}
+  nav.tabs button:hover{background:var(--surface-2);color:var(--ink)}
+  nav.tabs button.active{background:var(--accent-soft);color:var(--accent-ink)}
+  .top-spacer{flex:1}
+  .privacy{font-size:11.5px;color:var(--ink-faint);display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .privacy::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--in)}
+  .privacy .txt{display:none}
+
+  /* bottom nav (mobile) */
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+    background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -2px 12px rgba(24,32,41,.06);
+    padding-bottom:env(safe-area-inset-bottom,0)}
+  .bottomnav button{flex:1;border:none;background:transparent;border-radius:0;min-height:58px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-size:11px;color:var(--ink-faint);padding:7px 2px}
+  .bottomnav button .ic{font-size:19px;line-height:1}
+  .bottomnav button.active{color:var(--accent-ink);font-weight:600}
+
+  main{max-width:1080px;margin:0 auto;padding:18px 16px 92px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.view.active{animation:none}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .pad{padding:18px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  h2.title{font-size:22px;margin-bottom:3px}
+  .sub{color:var(--ink-faint);font-size:13.5px}
+  .mt{margin-top:18px}.muted{color:var(--ink-faint)}
+  .pos{color:var(--in)}.neg{color:var(--out)}
+  .grow{flex:1;min-width:130px}
+
+  .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow)}
+  .tile .l{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-family:ui-monospace,Consolas,monospace}
+  .tile .v{font-size:23px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+
+  .donut-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center;padding:8px 0 18px;margin-bottom:8px;border-bottom:1px solid var(--line)}
+  .donut{width:200px;height:200px;flex:none;transform:rotate(0deg)}
+  .donut circle{transition:opacity .15s}.donut circle:hover{opacity:.8}
+  .donut .dt1{font-size:4.6px;font-weight:800;fill:var(--ink);font-family:inherit}
+  .donut .dt2{font-size:2.6px;fill:var(--ink-faint);font-family:inherit}
+  .donut-legend{flex:1 1 200px;min-width:190px;display:grid;gap:7px}
+  .donut-legend .lg{display:flex;align-items:center;gap:9px;font-size:13.5px}
+  .donut-legend .lg i{width:11px;height:11px;border-radius:3px;flex:none}
+  .donut-legend .lg .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .verdict{font-size:19px;font-weight:800;line-height:1.3;margin:2px 0 6px}
+  .verdict.ok{color:var(--in)}.verdict.owe{color:var(--warn)}
+  .fnote{font-size:13px;color:var(--warn);margin-top:8px}
+  .stnote{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:14px;line-height:1.45}
+  .stnote.bad{background:var(--out-soft);color:var(--out)}
+  .stnote.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));color:var(--warn)}
+  .trend{display:flex;gap:10px;align-items:flex-end;height:150px;overflow-x:auto;padding-bottom:2px}
+  .trend .m{flex:1 0 46px;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+  .trend .bars{display:flex;gap:3px;align-items:flex-end;height:calc(100% - 20px);width:100%;justify-content:center}
+  .trend .b{width:40%;max-width:18px;border-radius:4px 4px 0 0;min-height:2px}
+  .trend .lbl{font-size:11px;color:var(--ink-faint);white-space:nowrap}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--ink-faint);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .matrix-wrap{overflow-x:auto;margin:0 -4px}
+  table.matrix{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
+  table.matrix th,table.matrix td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+  table.matrix th{font-weight:600;color:var(--ink-faint);font-size:11.5px;position:sticky;top:0;background:var(--surface)}
+  table.matrix td:first-child,table.matrix th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  table.matrix td.tot,table.matrix th.tot{font-weight:700;border-left:1px solid var(--line)}
+  table.matrix tr.sum td{font-weight:700;border-top:2px solid var(--line-strong)}
+  table.matrix td.z{color:var(--line-strong)}
+  .catbar{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:8px 0}
+  .catbar .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .catbar .track{grid-column:1 / -1;order:3;height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+  .fill{height:100%;border-radius:6px}
+  .catbar .val{text-align:right;font-size:14px;white-space:nowrap}
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .filters #tx-search{flex-basis:100%}
+  .filters select{flex:1;min-width:120px}
+  .empty{text-align:center;padding:46px 18px;color:var(--ink-faint)}
+  .empty .big{font-size:38px;margin-bottom:8px;opacity:.6}
+
+  /* transactions as responsive rows/cards */
+  .txlist{overflow:hidden}
+  .txhead{display:none}
+  .txrow{display:grid;grid-template-columns:1fr 1fr auto;
+    grid-template-areas:"desc desc amt" "cat cat cat" "date owner del";
+    gap:7px 10px;padding:14px;border-bottom:1px solid var(--line)}
+  .txrow:last-child{border-bottom:none}
+  .c-date{grid-area:date;font-size:12.5px;color:var(--ink-faint);align-self:center}
+  .c-desc{grid-area:desc;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .c-owner{grid-area:owner;align-self:center}
+  .c-cat{grid-area:cat}
+  .c-cat select{width:100%}
+  .c-amt{grid-area:amt;text-align:right;white-space:nowrap;font-weight:700;align-self:center}
+  .c-del{grid-area:del;text-align:right;align-self:center}
+  .ownertag{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+  .desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .pill{display:inline-block;font-size:11px;font-family:ui-monospace,Consolas,monospace;padding:2px 8px;border-radius:20px;font-weight:600}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .kv:last-child{border-bottom:none}
+  .banner{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent-ink);border-radius:var(--radius);padding:12px 14px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start;margin-bottom:16px}
+
+  .maprow{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:14px}
+  .maprow label{font-weight:600;color:var(--ink)}
+  .preview{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
+  .preview table{border-collapse:collapse;width:100%;font-size:12px;min-width:420px}
+  .preview th,.preview td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .preview th{background:var(--surface-2);color:var(--ink-faint);font-size:10px;text-transform:uppercase}
+  .hint{font-size:12.5px;color:var(--ink-faint);margin-top:4px}
+  .drop{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:28px 18px;text-align:center;color:var(--ink-faint);background:var(--surface-2)}
+  .drop.drag{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+
+  .ruleitem{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ruleitem .kw{flex:1;min-width:110px}
+  .chipcat{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600;color:#fff;white-space:nowrap}
+
+  .split{display:grid;grid-template-columns:1fr;gap:14px}
+
+  .toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);
+    padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:var(--shadow);max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- desktop enhancements ---------- */
+  @media (min-width:760px){
+    .top-inner{height:60px;padding:0 20px}
+    nav.tabs{display:flex}
+    .bottomnav{display:none}
+    .privacy .txt{display:inline}
+    main{padding:26px 20px 80px}
+    .pad{padding:20px 22px}
+    h2.title{font-size:24px}
+    .tiles{grid-template-columns:repeat(4,1fr)}
+    .tile .v{font-size:26px}
+    .catbar{grid-template-columns:160px 1fr 130px}
+    .catbar .track{grid-column:auto;order:0}
+    .toast{bottom:24px}
+    .split{grid-template-columns:1fr 1fr}
+    .maprow{grid-template-columns:180px 1fr;align-items:center;gap:12px}
+    .maprow label{font-weight:400;color:var(--ink-soft)}
+    .txhead{display:grid}
+    .txhead,.txrow{grid-template-columns:104px minmax(0,1fr) 96px 172px 122px 42px;
+      grid-template-areas:"date desc owner cat amt del";gap:12px;align-items:center;padding:10px 14px}
+    .txhead{background:var(--surface-2);color:var(--ink-faint);font-size:11px;text-transform:uppercase;
+      letter-spacing:.05em;font-weight:600;border-bottom:1px solid var(--line-strong)}
+    .c-date{font-size:14px;color:var(--ink)}
+    .c-desc{max-width:none}
+    .c-cat select{max-width:172px}
+    .coach-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  }
+
+  /* ---------- coach ---------- */
+  .coach-note{font-size:12px;color:var(--ink-faint);margin-top:12px}
+  .coach-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .ring{position:relative;width:118px;height:118px;flex:0 0 auto;border-radius:50%;
+    background:conic-gradient(var(--ring-color,var(--accent)) calc(var(--p,0)*3.6deg), var(--surface-2) 0)}
+  .ring-inner{position:absolute;inset:11px;border-radius:50%;background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-num{font-size:32px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .ring-lbl{font-size:11px;color:var(--ink-faint)}
+  .band{display:inline-block;font-size:12px;font-weight:700;padding:3px 11px;border-radius:20px;margin-bottom:6px}
+  .metric .big{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .metric .cap{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;font-family:ui-monospace,Consolas,monospace}
+  .split-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;background:var(--surface-2);margin:12px 0 8px}
+  .seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;min-width:0;overflow:hidden}
+  .seg.need{background:#3b6ea5}.seg.want{background:#c07a3e}.seg.save{background:var(--in)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-top:4px}
+  .legend .k{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+  .ok{color:var(--in)}.high{color:var(--out)}
+  .budget-row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+  .budget-row:last-child{border-bottom:none}
+  .budget-row .bname{font-weight:600;font-size:14px}
+  .budget-row .bspent{font-size:12.5px;color:var(--ink-faint)}
+  .budget-row input{width:118px;text-align:right}
+  .budget-row .btrack{grid-column:1 / -1;height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+  .budget-row .bfill{height:100%;border-radius:5px}
+  .tip{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;margin-bottom:10px;background:var(--surface)}
+  .tip .icon{font-size:20px;line-height:1.2;flex:0 0 auto}
+  .tip.warn{border-left-color:var(--out)}
+  .tip.good{border-left-color:var(--in)}
+  .tip .body{font-size:13.5px}
+  .tip .body b{color:var(--ink)}
+  .ef-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+  .ef-field{display:flex;flex-direction:column;gap:4px}
+  .ef-field label{font-size:12px}
+  .ef-field input,.ef-field select{width:150px}
+  .classsel{padding:5px 8px;font-size:12.5px;min-height:auto}
+  .tdate{font-size:12.5px;padding:5px 7px;min-height:auto;width:100%;max-width:160px;border-color:var(--line);background:transparent}
+  .grouphdr{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent-ink);margin:16px 0 4px;padding-top:8px;border-top:1px solid var(--line);font-weight:700}
+  .grouphdr:first-child{border-top:none;padding-top:0;margin-top:4px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand"><img class="mark" src="mark.png" alt="" width="62" height="28"> <span>Mu<span class="stash">Stash</span></span></div>
+    <nav class="tabs nav-set">
+      <button data-view="dashboard" class="active">Dashboard</button>
+      <button data-view="transactions">Transactions</button>
+      <button data-view="coach">Coach</button>
+      <button data-view="fair">Fair share</button>
+      <button data-view="import">Import</button>
+      <button data-view="rules">Rules</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+    <div class="top-spacer"></div>
+    <div class="privacy" title="All data is stored only on this device. Nothing is uploaded."><span class="txt">Private · on this device</span></div>
+  </div>
+</header>
+
+<main>
+  <div id="storage-banner"></div>
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <div class="between" style="margin-bottom:16px">
+      <div><h2 class="title">Where the money goes</h2><div class="sub" id="dash-range">No transactions yet</div></div>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      <select id="dash-month" class="grow"></select>
+      <select id="dash-owner" class="grow"></select>
+    </div>
+    <div id="dash-body"></div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section class="view" id="view-transactions">
+    <h2 class="title">Transactions</h2>
+    <div class="sub" style="margin-bottom:14px">Tap any category to change it. Changes save automatically.</div>
+    <div class="filters">
+      <input type="text" id="tx-search" placeholder="Search description…">
+      <select id="tx-month"></select>
+      <select id="tx-owner"></select>
+      <select id="tx-cat"></select>
+      <button id="tx-clearfilters" class="ghost">Clear</button>
+      <button id="tx-delshown" class="danger">Delete shown</button>
+    </div>
+    <div id="tx-body"></div>
+  </section>
+
+  <!-- COACH -->
+  <section class="view" id="view-coach">
+    <div class="between" style="margin-bottom:14px">
+      <div><h2 class="title">Money Coach</h2><div class="sub">How you're doing against the money basics — for the two of you together.</div></div>
+      <select id="coach-month"></select>
+    </div>
+    <div id="coach-body"></div>
+    <div class="coach-note">General guidance based on your own numbers — not personalised financial advice.</div>
+  </section>
+
+  <!-- FAIR SHARE -->
+  <section class="view" id="view-fair">
+    <div class="between" style="margin-bottom:14px">
+      <div><h2 class="title">Fair share</h2><div class="sub">Who spends what, and whether you are each contributing fairly to the shared costs.</div></div>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      <select id="fair-month" class="grow"></select>
+      <select id="fair-mode" class="grow">
+        <option value="income">Split shared costs by income</option>
+        <option value="equal">Split shared costs equally</option>
+        <option value="custom">Split shared costs by my own percentage</option>
+      </select>
+      <input id="fair-pct" type="number" min="0" max="100" step="1" style="max-width:120px;display:none">
+    </div>
+    <div id="fair-body"></div>
+  </section>
+
+  <!-- IMPORT -->
+  <section class="view" id="view-import">
+    <h2 class="title">Import a statement</h2>
+    <div class="sub" style="margin-bottom:14px">Export a CSV from your banking app, then add it here. Works with any SA bank — you just confirm the columns.</div>
+    <div class="banner">
+      <span>💡</span>
+      <span><b>CSV or PDF works.</b> Export a <b>CSV</b> from online banking, or use an <b>FNB PDF</b> statement (great for backdated history and the FNB app, which only gives PDF). Tap <b>Choose files</b> and pick it. Got lots of PDFs? Select <b>many at once</b> (or drag &amp; drop them) and review them together.</span>
+    </div>
+    <div class="card pad">
+      <div id="drop" class="drop">
+        <div style="font-size:32px;margin-bottom:6px">📄</div>
+        <div style="margin-bottom:12px"><b>Add a CSV, or one or many PDF statements</b></div>
+        <button id="pickfile" class="primary">Choose files</button>
+        <input type="file" id="fileinput" multiple accept=".csv,.pdf,text/csv,text/comma-separated-values,application/pdf" style="display:none">
+        <div class="hint" style="margin-top:12px">Read here in your browser — never uploaded.</div>
+      </div>
+      <div id="mapping" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="view" id="view-rules">
+    <h2 class="title">Auto-categorise rules</h2>
+    <div class="sub" style="margin-bottom:14px">When a description contains a keyword, it gets that category. First match wins.</div>
+    <div class="card pad">
+      <div class="row" style="margin-bottom:14px">
+        <input type="text" id="rule-kw" placeholder="Keyword (e.g. WOOLWORTHS)" class="grow">
+        <select id="rule-cat" class="grow"></select>
+        <button id="rule-add" class="primary">Add</button>
+        <button id="rule-recat" class="ghost">Re-run on all</button>
+      </div>
+      <div id="rules-list"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <h2 class="title">Settings</h2>
+    <div class="sub" style="margin-bottom:14px">Manage categories, people, and your data.</div>
+    <div class="split">
+      <div class="card pad">
+        <h3 style="margin-bottom:10px">Categories</h3>
+        <div class="row" style="margin-bottom:6px">
+          <input type="text" id="cat-new" placeholder="New category name" class="grow">
+        </div>
+        <div class="row" style="margin-bottom:14px">
+          <select id="cat-new-group" class="grow"></select>
+          <select id="cat-new-class">
+            <option value="need">Need</option><option value="want" selected>Want</option>
+            <option value="save">Save</option><option value="transfer">Transfer</option>
+          </select>
+          <button id="cat-add" class="primary">Add</button>
+        </div>
+        <div id="cat-list"></div>
+      </div>
+      <div class="card pad">
+        <h3 style="margin-bottom:10px">People</h3>
+        <div class="row" style="margin-bottom:12px">
+          <input type="text" id="owner-new" placeholder="Name" class="grow">
+          <button id="owner-add" class="primary">Add</button>
+        </div>
+        <div id="owner-list"></div>
+      </div>
+    </div>
+    <div class="card pad mt">
+      <div class="between">
+        <div><h3>Auto-categorise rules</h3><div class="sub">Keyword → category rules used when importing.</div></div>
+        <button onclick="switchView('rules')">Manage rules →</button>
+      </div>
+    </div>
+    <div class="card pad mt" id="sync-card"></div>
+    <div class="card pad mt">
+      <h3 style="margin-bottom:6px">Backup &amp; restore</h3>
+      <div class="sub" style="margin-bottom:14px">Your data lives on this device (and in your encrypted shared file if you turn on sync). Save a backup to keep it safe or move it to another device.</div>
+      <div class="row">
+        <button id="backup" class="primary">⬇ Download backup</button>
+        <button id="restore-btn">⬆ Restore backup</button>
+        <button id="restore-undo" style="display:none">↩ Undo last restore</button>
+        <input type="file" id="restore-input" accept=".json,application/json" style="display:none">
+        <span class="grow"></span>
+        <button id="wipe" class="danger">Delete all data</button>
+      </div>
+    </div>
+    <div class="card pad mt">
+      <h3 style="margin-bottom:6px">About</h3>
+      <div class="sub">A private, offline budgeting tool for two people. No accounts, no cloud, no cost. <span id="txcount"></span></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottomnav nav-set">
+  <button data-view="dashboard" class="active"><span class="ic">📊</span>Home</button>
+  <button data-view="transactions"><span class="ic">🧾</span>Money</button>
+  <button data-view="coach"><span class="ic">🧭</span>Coach</button>
+  <button data-view="fair"><span class="ic">⚖️</span>Fair</button>
+  <button data-view="import"><span class="ic">⬆️</span>Import</button>
+  <button data-view="settings"><span class="ic">⚙️</span>Settings</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="statement-parser.js"></script>
+<script src="sync.js"></script>
+<script src="sync-config.js"></script>
+<script src="sync-drive.js"></script>
+<script>
+"use strict";
+/* ---------- storage ---------- */
+const KEY="ourmoney.v1";   // internal name of the stored data: do not rename, or existing data would look empty
+// If the browser cannot keep data, or saved data cannot be read, the app says so loudly instead of quietly starting empty.
+let storageProblem=null;                 // "blocked" | "full" | "corrupt" | null
+const META_KEY="ourmoney.meta";          // small notes about this device (last backup, dismissed tips); not part of the synced data
+const readMeta=()=>{try{return JSON.parse(localStorage.getItem(META_KEY)||"{}");}catch(e){return{};}};
+const writeMeta=m=>{try{localStorage.setItem(META_KEY,JSON.stringify(Object.assign(readMeta(),m)));}catch(e){}};
+// [name, group, class]  — grouped taxonomy
+const CATS=[
+  ["Chanté","Personal","want"],["Jolene","Personal","want"],
+  ["Food & Cleaning Supplies","Groceries","need"],["Toiletries & Hygiene","Groceries","need"],
+  ["Loan / Rent","Home","need"],["Home Extras","Home","want"],["Home Maintenance","Home","need"],
+  ["Rates & Taxes","Home","need"],["Electricity","Home","need"],["Water","Home","need"],["Levies","Home","need"],
+  ["Car Loan","Cars","need"],["Car Maintenance & Rideshare","Cars","need"],["Fuel","Cars","need"],
+  ["Internet","Leisure","need"],["Subscriptions","Leisure","want"],["Leisure Other","Leisure","want"],
+  ["Going Out","Leisure","want"],["Adventures & Holidays","Leisure","want"],["Wellness","Leisure","want"],
+  ["Phones","Other","need"],["Medication","Other","need"],["Doctors & Medical","Other","need"],
+  ["Bank Fees","Other","need"],["Gifts & Unexpected","Other","want"],["Family & Donations","Other","want"],
+  ["Short-Term Insurance","Insurance","need"],["Life Insurance","Insurance","need"],
+  ["Retirement","Savings","save"],["Savings","Savings","save"],["Investments","Savings","save"],
+  ["Income","Income","income"],["Internal Transfer","Transfers","transfer"],["Partner contribution","Transfers","transfer"],["Uncategorised","Other","want"]
+];
+const GROUP_ORDER=["Personal","Groceries","Home","Cars","Leisure","Other","Insurance","Savings","Income","Transfers"];
+const DEFAULT_CATS=CATS.map(c=>c[0]);
+const CAT_GROUP={};CATS.forEach(c=>CAT_GROUP[c[0]]=c[1]);
+const DEFAULT_CLASS={};CATS.forEach(c=>DEFAULT_CLASS[c[0]]=c[2]);
+function groupOf(cat){return (S&&S.catGroup&&S.catGroup[cat])||CAT_GROUP[cat]||"Other";}
+// Groups in display order. A renamed or custom group is kept in S.groups.
+function groupList(){
+  const g=(S.groups&&S.groups.length?S.groups:GROUP_ORDER).slice();
+  for(const c of S.categories){const x=groupOf(c);if(!g.includes(x))g.push(x);}
+  return g;
+}
+// Paying the credit card from the cheque account is money moving between your own
+// accounts: both sides are "Internal Transfer" so they cancel out instead of counting as spending.
+const TRANSFER_RULES=[
+  ["NA CREDIT CARD","Internal Transfer"],["TO CREDIT CARD","Internal Transfer"],["NA CREDIT PAY","Internal Transfer"],
+  ["TO CREDIT PAY","Internal Transfer"],["1SA CREDIT","Internal Transfer"],["CREDIT CARD CLEAR","Internal Transfer"],
+  ["GOLD CREDIT","Internal Transfer"],["DISC CARD","Internal Transfer"],["INTEREST CHARGED","Bank Fees"]
+];
+const DEFAULT_RULES=[
+  ...TRANSFER_RULES,
+  ["WOOLWORTHS","Food & Cleaning Supplies"],["WOOLIES","Food & Cleaning Supplies"],["CHECKERS","Food & Cleaning Supplies"],
+  ["PICK N PAY","Food & Cleaning Supplies"],["PNP","Food & Cleaning Supplies"],["SHOPRITE","Food & Cleaning Supplies"],
+  ["SPAR","Food & Cleaning Supplies"],["FOOD LOVER","Food & Cleaning Supplies"],["MAKRO","Food & Cleaning Supplies"],["FRUIT & VEG","Food & Cleaning Supplies"],
+  ["CLICKS","Toiletries & Hygiene"],
+  ["UBER EATS","Going Out"],["MR D","Going Out"],["MRD FOOD","Going Out"],["KFC","Going Out"],["NANDOS","Going Out"],
+  ["MCDONALD","Going Out"],["STEERS","Going Out"],["VIDA","Going Out"],["MUGG","Going Out"],["WIMPY","Going Out"],
+  ["DEBONAIR","Going Out"],["ROMANS PIZZA","Going Out"],["BOOTLEGGER","Going Out"],["RESTAURANT","Going Out"],["COFFEE","Going Out"],["CAFE","Going Out"],
+  ["ENGEN","Fuel"],["SASOL","Fuel"],["SHELL","Fuel"],["CALTEX","Fuel"],["TOTAL","Fuel"],["BP ","Fuel"],
+  ["UBER","Car Maintenance & Rideshare"],["BOLT","Car Maintenance & Rideshare"],["GAUTRAIN","Car Maintenance & Rideshare"],["TYRE","Car Maintenance & Rideshare"],
+  ["VODACOM","Phones"],["MTN","Phones"],["TELKOM","Phones"],["CELL C","Phones"],["RAIN","Phones"],
+  ["AFRIHOST","Internet"],["WEBAFRICA","Internet"],["COOL IDEAS","Internet"],["VOX","Internet"],["FIBRE","Internet"],["VUMATEL","Internet"],
+  ["ESKOM","Electricity"],["PREPAID ELEC","Electricity"],["MUNICIPAL","Rates & Taxes"],["CITY OF","Rates & Taxes"],
+  ["LEVY","Levies"],["LEVIES","Levies"],["BODY CORP","Levies"],
+  ["NETFLIX","Subscriptions"],["SPOTIFY","Subscriptions"],["DSTV","Subscriptions"],["SHOWMAX","Subscriptions"],
+  ["APPLE.COM","Subscriptions"],["GOOGLE","Subscriptions"],["YOUTUBE","Subscriptions"],["AMAZON PRIME","Subscriptions"],["MICROSOFT","Subscriptions"],["ICLOUD","Subscriptions"],
+  ["TAKEALOT","Leisure Other"],["MRP","Leisure Other"],["MR PRICE","Leisure Other"],["H&M","Leisure Other"],["ZARA","Leisure Other"],
+  ["GAME ","Leisure Other"],["INCREDIBLE","Leisure Other"],["NESPRESSO","Leisure Other"],["WALMART","Leisure Other"],
+  ["DIS-CHEM","Medication"],["DISCHEM","Medication"],["PHARMACY","Medication"],["MEDIRITE","Medication"],
+  ["DENTIST","Doctors & Medical"],["DOCTOR","Doctors & Medical"],
+  ["PHYSIOTH","Wellness"],["PHYSIO","Wellness"],["VIRGIN ACTIVE","Wellness"],["PLANET FITNESS","Wellness"],["GYM","Wellness"],["WELLNESS","Wellness"],
+  ["NU METRO","Going Out"],["STER KINEKOR","Going Out"],["COMPUTICKET","Adventures & Holidays"],["AIRBNB","Adventures & Holidays"],["BOOKING.COM","Adventures & Holidays"],["FLIGHT","Adventures & Holidays"],
+  ["DISCOVERY HEALTH","Short-Term Insurance"],["MEDICAL AID","Short-Term Insurance"],["MOMENTUM HEALTH","Short-Term Insurance"],["GAP COVER","Short-Term Insurance"],
+  ["OUTSURANCE","Short-Term Insurance"],["MIWAY","Short-Term Insurance"],["SANTAM","Short-Term Insurance"],["KING PRICE","Short-Term Insurance"],["NAKED","Short-Term Insurance"],["INSURANCE","Short-Term Insurance"],
+  ["LIBERTY","Life Insurance"],["OLD MUTUAL","Life Insurance"],["SANLAM","Life Insurance"],["1LIFE","Life Insurance"],["ONE LIFE","Life Insurance"],["LIFE COVER","Life Insurance"],["MOMENTUM","Life Insurance"],
+  ["EASYEQUITIES","Investments"],["SATRIX","Investments"],["ALLAN GRAY","Investments"],["10X","Retirement"],["RETIREMENT ANNUITY","Retirement"],
+  ["BANK U KLEINGELD","Savings"],["ROUND-UP","Savings"],
+  ["FAMILY CARE","Family & Donations"],["DONATION","Family & Donations"],["CHURCH","Family & Donations"],["TITHE","Family & Donations"],
+  ["SALARY","Income"],["SALARIS","Income"],["INTEREST","Income"],["RENTE","Income"],
+  ["FOOI","Bank Fees"],["DIENSFOOI","Bank Fees"],["DIENS FOOI","Bank Fees"],["BANKKOSTE","Bank Fees"],["FEE","Bank Fees"],
+  ["SERVICE CHARGE","Bank Fees"],["BANK CHARGE","Bank Fees"],["MONTHLY ACCOUNT","Bank Fees"],["MAGBAND","Bank Fees"],["ADVICE FEE","Bank Fees"],
+  ["CREDIT SETTLEMENT","Internal Transfer"],["RENT CAR","Internal Transfer"],["FNBCC","Internal Transfer"],["PAYMENT THANK YOU","Internal Transfer"]
+];
+const CAT_MIGRATE={
+  "Groceries":"Food & Cleaning Supplies","Eating out":"Going Out","Transport & fuel":"Fuel",
+  "Bills & utilities":"Electricity","Rent / home":"Loan / Rent","Subscriptions":"Subscriptions",
+  "Shopping":"Leisure Other","Health":"Doctors & Medical","Entertainment":"Going Out",
+  "Savings & transfers":"Savings","Income":"Income","Fees & bank":"Bank Fees","Cash":"Uncategorised",
+  "Internal transfer":"Internal Transfer","Other":"Uncategorised"
+};
+function fresh(){return{version:6,transactions:[],categories:DEFAULT_CATS.slice(),
+  rules:DEFAULT_RULES.map(r=>({kw:r[0],cat:r[1]})),owners:["Chanté","Jolene"],bankMaps:{},
+  budgets:{},catClass:{},catGroup:{},groups:null,coach:{emergencyFund:0,targetMonths:3},fair:{mode:"income",pct:50,shared:null},deleted:{},setMod:0};}
+function getClass(cat){return S.catClass[cat]||DEFAULT_CLASS[cat]||"want";}
+// ---- change tracking, so two phones can sync ----
+// Every transaction carries a "mod" time, and deletions are remembered in S.deleted, so a merge can tell
+// what changed since the last time. This runs inside save(), so no edit anywhere else needs to know about it.
+const txSig=t=>[t.date,t.desc,t.amt,t.owner,t.bank,t.cat].join("|");
+const SETTINGS_KEYS=["categories","rules","owners","bankMaps","budgets","catClass","catGroup","groups","coach","fair"];   // keep in step with sync.js
+const settingsSig=()=>JSON.stringify(SETTINGS_KEYS.map(k=>S[k]));
+let _sig=new Map(),_setSig="";
+function baseline(){_sig=new Map(S.transactions.map(t=>[t.id,txSig(t)]));_setSig=settingsSig();}
+function stampChanges(){
+  const now=Date.now(),seen=new Set();
+  for(const t of S.transactions){seen.add(t.id);const g=txSig(t);if(_sig.get(t.id)!==g){t.mod=now;_sig.set(t.id,g);}}
+  if(!S.deleted)S.deleted={};
+  for(const id of [..._sig.keys()])if(!seen.has(id)){S.deleted[id]=now;_sig.delete(id);}
+  const ss=settingsSig();if(ss!==_setSig){S.setMod=now;_setSig=ss;}
+}
+let S=load();
+baseline();
+if(!storageProblem){try{localStorage.setItem(META_KEY+".t","1");localStorage.removeItem(META_KEY+".t");}catch(e){storageProblem="blocked";}}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});   // ask the browser not to clear our data
+function load(){let p=null;
+  try{const r=localStorage.getItem(KEY);if(r)p=JSON.parse(r);}
+  catch(e){
+    if(e instanceof SyntaxError){storageProblem="corrupt";
+      try{localStorage.setItem(KEY+".unreadable."+Date.now(),localStorage.getItem(KEY));}catch(x){}}   // keep a copy of what was there
+    else storageProblem="blocked";
+  }
+  if(!p)return fresh();
+  const s=Object.assign(fresh(),p);
+  let changed=false;
+  if((p.version||0)<2){migrate(s,p);changed=true;}
+  if((s.version||0)<3){repairDates(s);s.version=3;changed=true;}
+  if((s.version||0)<5){addTransferRules(s);s.version=5;changed=true;}
+  if((s.version||0)<6){addPartnerCategory(s);s.version=6;changed=true;}
+  if(changed)try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
+  return s;}
+// v4: add the credit-card transfer rules (first, so they win) and re-sort anything still Uncategorised.
+function addTransferRules(s){
+  const have=new Set(s.rules.map(r=>(r.kw||"").toUpperCase()));
+  s.rules=TRANSFER_RULES.filter(([kw])=>!have.has(kw)).map(([kw,cat])=>({kw,cat})).concat(s.rules);
+  for(const t of s.transactions||[]){
+    if(t.cat!=="Uncategorised")continue;
+    const d=(t.desc||"").toUpperCase(),hit=s.rules.find(r=>r.kw&&d.includes(r.kw.toUpperCase()));
+    if(hit)t.cat=hit.cat;}
+}
+// v6: the Fair share tab needs a category for money you send each other, and its settings.
+function addPartnerCategory(s){
+  if(!s.categories.includes("Partner contribution"))s.categories.push("Partner contribution");
+  if(!s.fair)s.fair={mode:"income",pct:50,shared:null};
+}
+function repairDates(s){let n=0;(s.transactions||[]).forEach(t=>{
+  const m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t.date||"");
+  if(m){const mo=+m[2],d=+m[3];if(mo>12&&d<=12){t.date=`${m[1]}-${p2(d)}-${p2(mo)}`;n++;}}});
+  return n;}
+function migrate(s,p){
+  const custom=new Set((p.categories||[]).filter(c=>!DEFAULT_CLASS[c]&&!CAT_MIGRATE[c]));
+  const mapCat=c=>CAT_MIGRATE[c]||(DEFAULT_CLASS[c]?c:(custom.has(c)?c:"Uncategorised"));
+  (s.transactions||[]).forEach(t=>{t.cat=mapCat(t.cat);});
+  const nb={};for(const[c,v]of Object.entries(p.budgets||{}))nb[mapCat(c)]=v;s.budgets=nb;
+  s.categories=DEFAULT_CATS.concat([...custom]);
+  s.catClass={};
+  if(JSON.stringify(p.owners||["Chante","Partner"])===JSON.stringify(["Chante","Partner"])){
+    s.owners=["Chanté","Jolene"];
+    (s.transactions||[]).forEach(t=>{if(t.owner==="Chante")t.owner="Chanté";else if(t.owner==="Partner")t.owner="Jolene";});
+  }
+  s.rules=(p.rules||[]).map(r=>({kw:r.kw,cat:mapCat(r.cat)}));
+  const have=new Set(s.rules.map(r=>(r.kw||"").toUpperCase()));
+  DEFAULT_RULES.forEach(([kw,cat])=>{if(!have.has(kw.toUpperCase()))s.rules.push({kw,cat});});
+  s.version=2;
+}
+function catOptGroups(selected){let html="";
+  for(const g of groupList()){const cs=S.categories.filter(c=>groupOf(c)===g);if(!cs.length)continue;
+    html+=`<optgroup label="${esc(g)}">`+cs.map(c=>`<option ${c===selected?"selected":""}>${esc(c)}</option>`).join("")+`</optgroup>`;}
+  return html;}
+function save(){
+  stampChanges();
+  try{localStorage.setItem(KEY,JSON.stringify(S));}
+  catch(e){const was=storageProblem;storageProblem=e&&e.name==="QuotaExceededError"?"full":"blocked";if(was!==storageProblem)renderStorageBanner();}
+  if(window.syncAfterSave)window.syncAfterSave();
+}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const ZAR=n=>"R "+Math.abs(n).toLocaleString("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2});
+const ZARsigned=n=>(n<0?"-R ":"R ")+Math.abs(n).toLocaleString("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2});
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+function catColor(cat){const i=Math.max(0,S.categories.indexOf(cat));return`var(--cat${i%10})`;}
+function monthKey(d){return d.slice(0,7);}
+function monthLabel(k){if(k==="all")return"All months";const[y,m]=k.split("-");
+  const nm=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1];
+  return nm?nm+" "+y:k;}
+function hash(str){let h=0;for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}return h.toString(36);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function categorise(desc){const d=(desc||"").toUpperCase();for(const r of S.rules){if(r.kw&&d.includes(r.kw.toUpperCase()))return r.cat;}return "Uncategorised";}
+
+/* ---------- CSV parsing ---------- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,"");
+  const rows=[];let field="",row=[],inQ=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(inQ){if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else inQ=false;}else field+=c;}
+    else{if(c==='"')inQ=true;
+      else if(c===','){row.push(field);field="";}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field="";}
+      else if(c==='\r'){}
+      else field+=c;}}
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows.filter(r=>r.some(c=>c.trim()!==""));
+}
+function parseDate(s){
+  s=(s||"").trim();if(!s)return null;let m;
+  if(m=s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/))return mkDate(m[1],m[2],m[3]);
+  if(m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/))return mkDate(m[3],m[2],m[1]);
+  if(m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/)){const y=+m[3]<70?"20"+m[3]:"19"+m[3];return mkDate(y,m[2],m[1]);}
+  const mon={jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
+  if(m=s.match(/^(\d{1,2})\s*([A-Za-z]{3})[A-Za-z]*\s*(\d{2,4})/)){const mm=mon[m[2].toLowerCase()];
+    if(mm){let y=m[3];if(y.length===2)y=+y<70?"20"+y:"19"+y;return mkDate(y,mm,m[1]);}}
+  const d=new Date(s);if(!isNaN(d))return d.toISOString().slice(0,10);
+  return null;
+}
+function num(s){if(s==null)return NaN;s=String(s).replace(/[R\s,]/g,"").replace(/[()]/g,m=>m==="("?"-":"");
+  if(/^-?\d*\.?\d+$/.test(s))return parseFloat(s);
+  return parseFloat(s.replace(/\./g,"").replace(",","."));}
+
+/* ---------- import flow ---------- */
+let pending=null;
+let _shownIds=[];
+function handleFile(file){
+  const name=(file.name||"").toLowerCase();
+  if(name.endsWith(".pdf")||file.type==="application/pdf"){handlePdf(file);return;}
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const rows=parseCSV(rd.result);
+    if(rows.length<2){toast("That file has no rows I can read.");return;}
+    let hIdx=0;
+    for(let i=0;i<Math.min(rows.length,8);i++){const textCells=rows[i].filter(c=>c.trim()&&isNaN(num(c))).length;
+      if(textCells>=2){hIdx=i;break;}}
+    const headers=rows[hIdx].map((h,i)=>h.trim()||("Column "+(i+1)));
+    pending={headers,body:rows.slice(hIdx+1)};
+    showMapping();
+  }catch(e){toast("Could not read that file.");console.error(e);}};
+  rd.readAsText(file);
+}
+function ownerOptionsHtml(){return S.owners.map(o=>`<option>${esc(o)}</option>`).join("")+`<option>Joint</option>`;}
+function guess(headers,words){for(let i=0;i<headers.length;i++){const h=headers[i].toLowerCase();
+  if(words.some(w=>h.includes(w)))return i;}return -1;}
+function showMapping(){
+  const H=pending.headers;
+  const gDate=guess(H,["date","datum"]);
+  const gDesc=guess(H,["description","desc","narrative","detail","reference","memo","payee"]);
+  const gAmt=guess(H,["amount","amt","value"]);
+  const gDeb=guess(H,["debit","paid out","money out","withdraw"]);
+  const gCred=guess(H,["credit","paid in","money in","deposit"]);
+  const opts=(sel)=>H.map((h,i)=>`<option value="${i}" ${i===sel?"selected":""}>${esc(h)}</option>`).join("");
+  const optsN=(sel)=>`<option value="-1">— none —</option>`+H.map((h,i)=>`<option value="${i}" ${i===sel?"selected":""}>${esc(h)}</option>`).join("");
+  const ownerOpts=ownerOptionsHtml();
+  const twoCol=gDeb>-1&&gCred>-1;
+  const m=$("#mapping");m.style.display="block";
+  m.innerHTML=`
+    <h3 style="margin:20px 0 4px">Match up the columns</h3>
+    <div class="hint" style="margin-bottom:16px">I guessed these from your file — fix any that are wrong.</div>
+    <div class="maprow"><label>Date column</label><select id="mDate">${opts(gDate)}</select></div>
+    <div class="maprow"><label>Description column</label><select id="mDesc">${opts(gDesc)}</select></div>
+    <div class="maprow"><label>Amount style</label>
+      <select id="mStyle">
+        <option value="single" ${!twoCol?"selected":""}>One column (money out = negative)</option>
+        <option value="singlePos">One column (money out = positive)</option>
+        <option value="two" ${twoCol?"selected":""}>Separate Debit &amp; Credit columns</option>
+      </select></div>
+    <div class="maprow amtsingle"><label>Amount column</label><select id="mAmt">${opts(gAmt>-1?gAmt:gDeb)}</select></div>
+    <div class="maprow amttwo" style="display:none"><label>Debit (money out)</label><select id="mDeb">${optsN(gDeb)}</select></div>
+    <div class="maprow amttwo" style="display:none"><label>Credit (money in)</label><select id="mCred">${optsN(gCred)}</select></div>
+    <div class="maprow"><label>Whose account?</label><select id="mOwner">${ownerOpts}</select></div>
+    <div class="maprow"><label>Bank / account name</label><input type="text" id="mBank" placeholder="e.g. FNB Cheque"></div>
+    <div id="mPreview"></div>
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="doImport">Import transactions</button>
+      <button class="ghost" id="cancelImport">Cancel</button>
+    </div>`;
+  const styleSel=$("#mStyle");
+  const syncStyle=()=>{const two=styleSel.value==="two";
+    m.querySelectorAll(".amtsingle").forEach(e=>e.style.display=two?"none":"grid");
+    m.querySelectorAll(".amttwo").forEach(e=>e.style.display=two?"grid":"none");renderPreview();};
+  styleSel.onchange=syncStyle;
+  ["mDate","mDesc","mAmt","mDeb","mCred","mStyle"].forEach(id=>{const e=document.getElementById(id);if(e)e.onchange=renderPreview;});
+  $("#doImport").onclick=doImport;
+  $("#cancelImport").onclick=()=>{pending=null;m.style.display="none";m.innerHTML="";};
+  syncStyle();renderPreview();
+  m.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function readMapping(){
+  const style=$("#mStyle").value;
+  return{date:+$("#mDate").value,desc:+$("#mDesc").value,style,
+    amt:$("#mAmt")?+$("#mAmt").value:-1,deb:$("#mDeb")?+$("#mDeb").value:-1,cred:$("#mCred")?+$("#mCred").value:-1,
+    owner:$("#mOwner").value,bank:$("#mBank").value.trim()};
+}
+function rowToAmount(r,map){
+  if(map.style==="two"){const d=map.deb>-1?num(r[map.deb]):NaN;const c=map.cred>-1?num(r[map.cred]):NaN;
+    let v=0;if(!isNaN(d)&&Math.abs(d)>0)v-=Math.abs(d);if(!isNaN(c)&&Math.abs(c)>0)v+=Math.abs(c);return v;}
+  let v=num(r[map.amt]);if(isNaN(v))return NaN;
+  if(map.style==="singlePos")v=-Math.abs(v);
+  return v;
+}
+function buildRows(map){
+  const out=[];
+  for(const r of pending.body){
+    const date=parseDate(r[map.date]);const desc=(r[map.desc]||"").trim();
+    const amt=rowToAmount(r,map);
+    if(!date||isNaN(amt)||!desc)continue;
+    out.push({date,desc,amt});
+  }
+  return out;
+}
+function renderPreview(){
+  const map=readMapping();const rows=buildRows(map).slice(0,5);
+  const box=$("#mPreview");
+  if(!rows.length){box.innerHTML=`<div class="hint" style="color:var(--warn);margin-top:14px">No readable rows yet — check the Date and Amount columns above.</div>`;return;}
+  box.innerHTML=`<div class="hint" style="margin-top:16px">Preview (first 5 rows):</div>
+    <div class="preview"><table><thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th>Category</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr><td class="mono">${x.date}</td><td>${esc(x.desc)}</td>
+      <td class="amt ${x.amt<0?'neg':'pos'}" style="text-align:right">${ZARsigned(x.amt)}</td><td>${esc(categorise(x.desc))}</td></tr>`).join("")}</tbody></table></div>`;
+}
+// Adds rows to the store (skipping ones already there). Does not save or redraw.
+function addTransactions(rows,owner,bank){
+  const existing=new Set(S.transactions.map(t=>t.id));
+  let added=0,dupes=0;
+  for(const x of rows){
+    const id=hash(x.date+"|"+x.amt.toFixed(2)+"|"+x.desc+"|"+owner);
+    if(existing.has(id)){dupes++;continue;}
+    existing.add(id);
+    S.transactions.push({id,date:x.date,desc:x.desc,amt:x.amt,owner,bank:bank||"Import",cat:categorise(x.desc)});
+    added++;
+  }
+  return{added,dupes};
+}
+function finishImport({added,dupes}){
+  save();
+  toast(`Imported ${added} transaction${added!==1?"s":""}${dupes?`, skipped ${dupes} already there`:""}.`);
+  renderAll();switchView("dashboard");
+}
+function importRows(rows,owner,bank){finishImport(addTransactions(rows,owner,bank));}
+function doImport(){
+  const map=readMapping();const rows=buildRows(map);
+  if(!rows.length){toast("Nothing to import — check the column choices.");return;}
+  if(map.bank)S.bankMaps[map.bank]=map;
+  pending=null;$("#mapping").style.display="none";$("#mapping").innerHTML="";
+  importRows(rows,map.owner,map.bank);
+}
+
+/* ---------- PDF import ---------- */
+// Used when the bank only offers a PDF. Parsing lives in statement-parser.js.
+let _pdfjs=null;
+function ensurePdfjs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  if(_pdfjs)return _pdfjs;
+  _pdfjs=new Promise((res,rej)=>{
+    const s=document.createElement("script");s.src="pdf.min.js";
+    s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc="pdf.worker.min.js";res(window.pdfjsLib);}catch(e){rej(e);}};
+    s.onerror=()=>{_pdfjs=null;rej(new Error("PDF reader failed to load."));};
+    document.head.appendChild(s);
+  });
+  return _pdfjs;
+}
+async function pdfLines(file){
+  const lib=await ensurePdfjs();
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const lines=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const tc=await(await doc.getPage(p)).getTextContent();
+    lines.push(...itemsToLines(tc.items));
+  }
+  return lines;
+}
+async function readPdf(file){
+  const lines=await pdfLines(file);
+  if(!lines.length)throw new Error("That PDF has no text in it (it looks like a scan). Download a text-based PDF or a CSV from the bank instead.");
+  return parseStatementLines(lines);
+}
+const isPdf=f=>/\.pdf$/i.test(f.name||"")||f.type==="application/pdf";
+async function handleFiles(list){
+  const files=[...list];
+  if(files.length<=1){if(files[0])handleFile(files[0]);return;}
+  const pdfs=files.filter(isPdf),others=files.filter(f=>!isPdf(f)).map(f=>f.name);
+  if(!pdfs.length){toast("To import several files at once, pick PDFs. CSVs go one at a time.");return;}
+  const items=[];
+  for(let i=0;i<pdfs.length;i++){
+    toast(`Reading ${i+1} of ${pdfs.length}…`);
+    try{items.push({name:pdfs[i].name,res:await readPdf(pdfs[i])});}
+    catch(e){console.error(e);items.push({name:pdfs[i].name,error:e.message||"Couldn't read that PDF."});}
+  }
+  showBatchConfirm(items,others);
+}
+function showBatchConfirm(items,otherFiles){
+  const m=$("#mapping");m.style.display="block";
+  const good=items.filter(it=>it.res);
+  // one account-name box per kind of statement (e.g. FNB cheque vs FNB credit card)
+  const labels=[...new Set(good.map(it=>it.res.label))];
+  const rows=items.map((it,i)=>{
+    if(it.error)return`<tr><td></td><td>${esc(it.name)}</td><td colspan="2" style="color:var(--warn)">✕ ${esc(it.error)}</td></tr>`;
+    const bad=it.res.status==="mismatch";
+    const check=bad?"⚠ Doesn't balance":it.res.status==="unchecked"?"Read (no balance to check)":"✓ Balanced";
+    return`<tr><td><input type="checkbox" class="bpick" data-i="${i}" ${bad?"":"checked"}></td><td>${esc(it.name)}</td>
+      <td>${it.res.tx.length}</td><td style="color:${bad?"var(--warn)":"var(--in)"}">${check}</td></tr>`;}).join("");
+  const nameInputs=labels.map((l,k)=>`<div class="maprow"><label>${esc(l)} account name</label><input type="text" class="bname" data-k="${k}" value="${esc(l==="Bank statement"?"":l)}" placeholder="e.g. Capitec Savings"></div>`).join("");
+  const ignored=otherFiles.length?`, ${otherFiles.length} non-PDF file${otherFiles.length>1?"s":""} ignored (CSVs go one at a time)`:"";
+  m.innerHTML=`
+    <h3 style="margin:20px 0 4px">Import ${items.length} PDF statements</h3>
+    <div class="hint" style="margin-bottom:12px">${good.length} read, ${items.length-good.length} couldn't be read${ignored}. Statements that don't balance are unticked: check them before importing.</div>
+    <div class="maprow"><label>Whose account?</label><select id="bOwner">${ownerOptionsHtml()}</select></div>
+    ${nameInputs}
+    <div class="preview" style="margin-top:8px;max-height:320px;overflow:auto"><table><thead><tr><th></th><th>File</th><th>Rows</th><th>Check</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="bImport">Import</button>
+      <button class="ghost" id="bCancel">Cancel</button>
+    </div>`;
+  const picked=()=>[...m.querySelectorAll(".bpick:checked")].map(c=>items[+c.dataset.i]);
+  const sync=()=>{const p=picked(),n=p.reduce((a,it)=>a+it.res.tx.length,0);
+    $("#bImport").textContent=`Import ${p.length} statement${p.length!==1?"s":""} (${n} transactions)`;$("#bImport").disabled=!p.length;};
+  m.querySelectorAll(".bpick").forEach(c=>c.onchange=sync);sync();
+  $("#bImport").onclick=()=>{
+    const owner=$("#bOwner").value,names=[...m.querySelectorAll(".bname")].map(i=>i.value.trim());
+    const total={added:0,dupes:0};
+    for(const it of picked()){const r=addTransactions(it.res.tx,owner,names[labels.indexOf(it.res.label)]);total.added+=r.added;total.dupes+=r.dupes;}
+    closeMapping();finishImport(total);};
+  $("#bCancel").onclick=closeMapping;
+  m.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+async function handlePdf(file){
+  toast("Reading PDF…");
+  let res;
+  try{res=await readPdf(file);}
+  catch(e){console.error(e);showPdfError(file.name,e.message||"Couldn't read that PDF.");return;}
+  showPdfConfirm(res,file.name);
+}
+function closeMapping(){const m=$("#mapping");m.style.display="none";m.innerHTML="";}
+function showPdfError(filename,msg){
+  const m=$("#mapping");m.style.display="block";
+  m.innerHTML=`<h3 style="margin:20px 0 4px">Couldn't import ${esc(filename)}</h3>
+    <div class="hint" style="color:var(--warn);margin-bottom:12px">${esc(msg)}</div>
+    <div class="hint">Nothing was imported. If your bank also offers a CSV download, that always works.</div>
+    <div class="row" style="margin-top:18px"><button class="ghost" id="pCancel">Close</button></div>`;
+  $("#pCancel").onclick=closeMapping;
+  m.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function showPdfConfirm(res,filename){
+  const m=$("#mapping");m.style.display="block";
+  const bad=res.status==="mismatch";
+  const note=res.note?`<div class="hint" style="color:${bad?"var(--warn)":"var(--in)"}">${bad?"⚠ ":res.status==="unchecked"?"":"✓ "}${esc(res.note)}</div>`:"";
+  m.innerHTML=`
+    <h3 style="margin:20px 0 4px">PDF import — ${esc(res.label)}</h3>
+    <div class="hint" style="margin-bottom:12px">Found <b>${res.tx.length}</b> transactions in <b>${esc(filename)}</b>.</div>
+    ${note}
+    <div class="maprow"><label>Whose account?</label><select id="pOwner">${ownerOptionsHtml()}</select></div>
+    <div class="maprow"><label>Account name</label><input type="text" id="pBank" value="${esc(res.type==="generic"?"":res.label)}" placeholder="e.g. Capitec Savings"></div>
+    <div class="preview" style="margin-top:8px"><table><thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th><th>Category</th></tr></thead>
+      <tbody>${res.tx.slice(0,6).map(x=>`<tr><td class="mono">${x.date}</td><td>${esc(x.desc||"—")}</td><td class="amt ${x.amt<0?'neg':'pos'}" style="text-align:right">${ZARsigned(x.amt)}</td><td>${esc(categorise(x.desc))}</td></tr>`).join("")}</tbody></table></div>
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="pImport">${bad?"Import anyway —":"Import"} ${res.tx.length} transactions</button>
+      <button class="ghost" id="pCancel">Cancel</button>
+    </div>`;
+  $("#pImport").onclick=()=>{const owner=$("#pOwner").value,bank=$("#pBank").value.trim();
+    closeMapping();importRows(res.tx,owner,bank);};
+  $("#pCancel").onclick=closeMapping;
+  m.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ---------- selects ---------- */
+function monthsList(){return Array.from(new Set(S.transactions.map(t=>monthKey(t.date)))).sort().reverse();}
+function fillMonthSelect(sel,withAll){const cur=sel.value;sel.innerHTML="";
+  if(withAll)sel.appendChild(new Option("All months","all"));
+  for(const k of monthsList())sel.appendChild(new Option(monthLabel(k),k));
+  if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+function fillOwnerSelect(sel){const cur=sel.value;sel.innerHTML="";
+  sel.appendChild(new Option("Everyone","all"));
+  for(const o of S.owners)sel.appendChild(new Option(o,o));
+  sel.appendChild(new Option("Joint","Joint"));
+  if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+function fillCatSelect(sel,withAll){const cur=sel.value;
+  sel.innerHTML=(withAll?`<option value="all">All categories</option>`:"")+catOptGroups(null);
+  if(cur&&[...sel.querySelectorAll("option")].some(o=>o.value===cur))sel.value=cur;}
+
+/* ---------- dashboard ---------- */
+function renderDashboard(){
+  fillMonthSelect($("#dash-month"),true);fillOwnerSelect($("#dash-owner"));
+  const month=$("#dash-month").value||"all";const owner=$("#dash-owner").value||"all";
+  let tx=S.transactions.slice().filter(t=>getClass(t.cat)!=="transfer");
+  if(owner!=="all")tx=tx.filter(t=>t.owner===owner);
+  const allMonthsTx=tx;  // month-by-month views ignore the month filter
+  if(month!=="all")tx=tx.filter(t=>monthKey(t.date)===month);
+  const body=$("#dash-body");
+  if(!S.transactions.length){body.innerHTML=emptyState("No transactions yet","Go to Import and add a bank statement CSV to get started.","import","Go to Import");
+    $("#dash-range").textContent="No transactions yet";return;}
+  $("#dash-range").textContent=`${tx.length} transaction${tx.length!==1?"s":""} · ${monthLabel(month)} · ${owner==="all"?"everyone":owner}`;
+  const inSum=tx.filter(t=>t.amt>0).reduce((a,t)=>a+t.amt,0);
+  const outSum=tx.filter(t=>t.amt<0).reduce((a,t)=>a+t.amt,0);
+  const net=inSum+outSum;
+  const spendByCat={};tx.filter(t=>t.amt<0).forEach(t=>{spendByCat[t.cat]=(spendByCat[t.cat]||0)+Math.abs(t.amt);});
+  const cats=Object.entries(spendByCat).sort((a,b)=>b[1]-a[1]);
+  const maxCat=cats.length?cats[0][1]:1;const totalOut=Math.abs(outSum)||1;
+  const byOwner={};tx.filter(t=>t.amt<0).forEach(t=>{byOwner[t.owner]=(byOwner[t.owner]||0)+Math.abs(t.amt);});
+  const owners=Object.entries(byOwner).sort((a,b)=>b[1]-a[1]);
+  body.innerHTML=`
+    <div class="tiles">
+      <div class="tile"><div class="l">Money in</div><div class="v pos">${ZAR(inSum)}</div></div>
+      <div class="tile"><div class="l">Money out</div><div class="v neg">${ZAR(outSum)}</div></div>
+      <div class="tile"><div class="l">Net</div><div class="v ${net<0?'neg':'pos'}">${ZARsigned(net)}</div></div>
+      <div class="tile"><div class="l">Transactions</div><div class="v">${tx.length}</div></div>
+    </div>
+    <div class="card pad mt">
+      <div class="between" style="margin-bottom:6px"><h3>Spending by category</h3><span class="sub">${ZAR(outSum)} out</span></div>
+      ${donutChart(cats,totalOut)}
+      ${cats.length?cats.map(([c,v])=>`
+        <div class="catbar">
+          <span class="name" title="${esc(c)}">${esc(c)}</span>
+          <span class="val amt">${ZAR(v)} <span class="muted">· ${Math.round(v/totalOut*100)}%</span></span>
+          <div class="track"><div class="fill" style="width:${Math.max(3,v/maxCat*100)}%;background:${catColor(c)}"></div></div>
+        </div>`).join(""):`<div class="muted" style="padding:10px 0">No spending in this view.</div>`}
+    </div>
+    ${trendCard(allMonthsTx)}
+    ${categoryMatrixCard(allMonthsTx)}
+    ${owners.length>1?`<div class="card pad mt">
+      <h3 style="margin-bottom:8px">Who spent what</h3>
+      ${owners.map(([o,v])=>`<div class="catbar"><span class="name">${esc(o)}</span>
+        <span class="val amt">${ZAR(v)}</span>
+        <div class="track"><div class="fill" style="width:${Math.max(3,v/owners[0][1]*100)}%;background:var(--accent)"></div></div></div>`).join("")}
+    </div>`:""}
+    <div class="card pad mt">
+      <h3 style="margin-bottom:10px">Biggest expenses</h3>${topExpenses(tx)}
+    </div>`;
+}
+// Donut of spend by category: top 8 get their own slice, the rest are grouped as "Other".
+function donutChart(cats,total){
+  if(!cats.length||total<=0)return"";
+  const top=cats.slice(0,8),rest=cats.slice(8).reduce((a,[,v])=>a+v,0);
+  const slices=top.map(([c,v],i)=>({name:c,v,color:`var(--cat${i})`}));
+  if(rest>0)slices.push({name:"Other",v:rest,color:"var(--cat9)"});
+  let offset=25;  // start at 12 o'clock
+  const arcs=slices.map(s=>{const pct=s.v/total*100,a=`<circle cx="21" cy="21" r="15.915" fill="none" stroke="${s.color}" stroke-width="6.5"
+      stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="${offset}"><title>${esc(s.name)}: ${ZAR(s.v)} (${Math.round(pct)}%)</title></circle>`;
+    offset-=pct;return a;}).join("");
+  const legend=slices.map(s=>`<div class="lg"><i style="background:${s.color}"></i><span class="n">${esc(s.name)}</span>
+    <span class="amt">${Math.round(s.v/total*100)}%</span></div>`).join("");
+  return`<div class="donut-wrap">
+    <svg class="donut" viewBox="0 0 42 42" role="img" aria-label="Spending by category">
+      <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--surface-2)" stroke-width="6.5"/>${arcs}
+      <text x="21" y="20.2" text-anchor="middle" class="dt1">${R0(total)}</text>
+      <text x="21" y="25" text-anchor="middle" class="dt2">spent</text>
+    </svg>
+    <div class="donut-legend">${legend}</div>
+  </div>`;
+}
+// ---- month-by-month views (ignore the month filter; respect the owner filter) ----
+const R0=n=>"R "+Math.round(n).toLocaleString("en-ZA");
+function lastMonths(tx,n){return[...new Set(tx.map(t=>monthKey(t.date)))].sort().slice(-n);}
+function trendCard(tx){
+  const months=lastMonths(tx,12);if(months.length<2)return"";
+  const inM={},outM={};
+  tx.forEach(t=>{const k=monthKey(t.date);if(t.amt>0)inM[k]=(inM[k]||0)+t.amt;else outM[k]=(outM[k]||0)+Math.abs(t.amt);});
+  const max=Math.max(1,...months.map(k=>Math.max(inM[k]||0,outM[k]||0)));
+  const cols=months.map(k=>`<div class="m" title="${monthLabel(k)}: in ${ZAR(inM[k]||0)}, out ${ZAR(outM[k]||0)}">
+    <div class="bars"><div class="b" style="height:${(inM[k]||0)/max*100}%;background:var(--in)"></div>
+      <div class="b" style="height:${(outM[k]||0)/max*100}%;background:var(--out)"></div></div>
+    <div class="lbl">${monthLabel(k).replace(" 20","  '")}</div></div>`).join("");
+  const avgOut=months.reduce((a,k)=>a+(outM[k]||0),0)/months.length;
+  return`<div class="card pad mt">
+    <div class="between" style="margin-bottom:12px"><h3>Month by month</h3><span class="sub">avg out ${R0(avgOut)}/month</span></div>
+    <div class="trend">${cols}</div>
+    <div class="legend"><span><i style="background:var(--in)"></i>Money in</span><span><i style="background:var(--out)"></i>Money out</span></div>
+  </div>`;
+}
+function categoryMatrixCard(tx){
+  const months=lastMonths(tx,12);if(!months.length)return"";
+  const spend=tx.filter(t=>t.amt<0);if(!spend.length)return"";
+  const grid={},rowTot={},colTot={};
+  spend.forEach(t=>{const k=monthKey(t.date),a=Math.abs(t.amt);if(!months.includes(k))return;
+    (grid[t.cat]=grid[t.cat]||{})[k]=(grid[t.cat][k]||0)+a;rowTot[t.cat]=(rowTot[t.cat]||0)+a;colTot[k]=(colTot[k]||0)+a;});
+  const cats=Object.keys(rowTot).sort((a,b)=>rowTot[b]-rowTot[a]);
+  const maxCell=Math.max(1,...cats.flatMap(c=>months.map(k=>grid[c][k]||0)));
+  const grand=cats.reduce((a,c)=>a+rowTot[c],0);
+  const head=`<tr><th>Category</th>${months.map(k=>`<th>${monthLabel(k).replace(" 20"," '")}</th>`).join("")}<th class="tot">Total</th><th>Avg/mo</th></tr>`;
+  const rows=cats.map(c=>`<tr><td title="${esc(c)}">${esc(c)}</td>${months.map(k=>{const v=grid[c][k]||0;
+    return v?`<td class="amt" style="background:color-mix(in srgb,var(--out) ${Math.round(v/maxCell*38)}%,transparent)">${R0(v)}</td>`:`<td class="amt z">·</td>`;}).join("")}
+    <td class="amt tot">${R0(rowTot[c])}</td><td class="amt">${R0(rowTot[c]/months.length)}</td></tr>`).join("");
+  const foot=`<tr class="sum"><td>Total spent</td>${months.map(k=>`<td class="amt">${R0(colTot[k]||0)}</td>`).join("")}<td class="amt tot">${R0(grand)}</td><td class="amt">${R0(grand/months.length)}</td></tr>`;
+  return`<div class="card pad mt">
+    <div class="between" style="margin-bottom:10px"><h3>Spend per category, per month</h3><span class="sub">last ${months.length} month${months.length>1?"s":""}</span></div>
+    <div class="matrix-wrap"><table class="matrix"><thead>${head}</thead><tbody>${rows}${foot}</tbody></table></div>
+    <div class="hint">Darker = more spent that month. Transfers between your own accounts are left out.</div>
+  </div>`;
+}
+function topExpenses(tx){const top=tx.filter(t=>t.amt<0).sort((a,b)=>a.amt-b.amt).slice(0,8);
+  if(!top.length)return`<div class="muted">Nothing here yet.</div>`;
+  return top.map(t=>`<div class="kv"><span>${esc(t.desc)}<br><span class="muted mono" style="font-size:12px">${t.date} · ${esc(t.cat)}</span></span>
+    <span class="amt neg" style="white-space:nowrap">${ZAR(t.amt)}</span></div>`).join("");}
+function emptyState(title,msg,view,btn){return`<div class="card"><div class="empty">
+  <div class="big">📊</div><h3 style="margin-bottom:6px">${title}</h3><div style="margin-bottom:16px;max-width:360px;margin-left:auto;margin-right:auto">${msg}</div>
+  <button class="primary" onclick="switchView('${view}')">${btn}</button></div></div>`;}
+
+/* ---------- transactions ---------- */
+function renderTransactions(){
+  fillMonthSelect($("#tx-month"),true);fillOwnerSelect($("#tx-owner"));fillCatSelect($("#tx-cat"),true);
+  const q=$("#tx-search").value.trim().toLowerCase();
+  const month=$("#tx-month").value||"all",owner=$("#tx-owner").value||"all",cat=$("#tx-cat").value||"all";
+  let tx=S.transactions.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(month!=="all")tx=tx.filter(t=>monthKey(t.date)===month);
+  if(owner!=="all")tx=tx.filter(t=>t.owner===owner);
+  if(cat!=="all")tx=tx.filter(t=>t.cat===cat);
+  if(q)tx=tx.filter(t=>t.desc.toLowerCase().includes(q)||t.cat.toLowerCase().includes(q));
+  const body=$("#tx-body");
+  if(!S.transactions.length){body.innerHTML=emptyState("No transactions yet","Import a CSV bank statement to see your transactions here.","import","Go to Import");return;}
+  const catOpts=c=>catOptGroups(c);
+  _shownIds=tx.map(t=>t.id);
+  body.innerHTML=`<div class="sub" style="margin-bottom:10px">${tx.length} shown</div>
+  <div class="card txlist">
+    <div class="txhead">
+      <span class="c-date">Date</span><span class="c-desc">Description</span><span class="c-owner">Who</span>
+      <span class="c-cat">Category</span><span class="c-amt" style="text-align:right">Amount</span><span class="c-del"></span>
+    </div>
+    ${tx.map(t=>`<div class="txrow">
+      <span class="c-date"><input type="date" class="tdate mono" data-id="${t.id}" value="${/^\d{4}-\d{2}-\d{2}$/.test(t.date)?t.date:""}"></span>
+      <span class="c-desc" title="${esc(t.desc)}">${esc(t.desc)}</span>
+      <span class="c-owner"><span class="ownertag">${esc(t.owner)}</span></span>
+      <span class="c-cat"><select class="catsel" data-id="${t.id}">${catOpts(t.cat)}</select></span>
+      <span class="c-amt amt ${t.amt<0?'neg':'pos'}">${ZARsigned(t.amt)}</span>
+      <span class="c-del"><button class="ghost del" data-id="${t.id}" title="Delete">✕</button></span>
+    </div>`).join("")}
+  </div>`;
+  body.querySelectorAll(".tdate").forEach(inp=>inp.onchange=()=>{
+    const t=S.transactions.find(x=>x.id===inp.dataset.id);if(t&&inp.value){t.date=inp.value;save();renderAll();toast("Date updated");}});
+  body.querySelectorAll(".catsel").forEach(s=>s.onchange=()=>{
+    const t=S.transactions.find(x=>x.id===s.dataset.id);if(t){t.cat=s.value;save();toast("Category updated");}});
+  body.querySelectorAll(".del").forEach(b=>b.onclick=()=>{
+    S.transactions=S.transactions.filter(x=>x.id!==b.dataset.id);save();renderAll();toast("Deleted");});
+}
+
+/* ---------- rules ---------- */
+function renderRules(){
+  fillCatSelect($("#rule-cat"),false);
+  const list=$("#rules-list");
+  if(!S.rules.length){list.innerHTML=`<div class="muted">No rules yet.</div>`;return;}
+  list.innerHTML=S.rules.map((r,i)=>`<div class="ruleitem">
+    <span class="mono kw">"${esc(r.kw)}"</span><span class="muted">→</span>
+    <span class="chipcat" style="background:${catColor(r.cat)}">${esc(r.cat)}</span>
+    <button class="ghost del" data-i="${i}">✕</button></div>`).join("");
+  list.querySelectorAll(".del").forEach(b=>b.onclick=()=>{S.rules.splice(+b.dataset.i,1);save();renderRules();});
+}
+
+/* ---------- settings ---------- */
+// ---- editing categories and groups ----
+let editCat=null,editGroup=null;                                   // which row is open for editing in Settings
+const PROTECTED_CATS=["Uncategorised","Partner contribution","Internal Transfer"];   // the app relies on these by name
+const txCount=c=>S.transactions.filter(t=>t.cat===c).length;
+// Rename a category and/or move it to another group. Everything that points at the old name is updated:
+// transactions, rules, budgets and the fair-share choices. Giving it the name of an existing category merges the two.
+function applyCategoryEdit(old,name,group){
+  name=(name||"").trim();
+  if(!name){toast("Give the category a name.");return false;}
+  if(PROTECTED_CATS.includes(old)||(name!==old&&PROTECTED_CATS.includes(name))){toast("The app uses that category by name, so it can't be renamed.");return false;}
+  const merging=name!==old&&S.categories.includes(name);
+  if(merging&&!confirm(`"${name}" already exists. Merge "${old}" into it? All transactions, rules and budgets for "${old}" move to "${name}".`))return false;
+  if(S.fair.shared===null)S.fair.shared=defaultShared();            // pin the fair-share choices so the rename cannot change them
+  const cls=getClass(old),grp=group||groupOf(old);
+  let moved=0;
+  if(name!==old){
+    S.transactions.forEach(t=>{if(t.cat===old){t.cat=name;moved++;}});
+    S.rules.forEach(r=>{if(r.cat===old)r.cat=name;});
+    if(S.budgets[old]!==undefined){S.budgets[name]=(S.budgets[name]||0)+S.budgets[old];delete S.budgets[old];}
+    S.categories=merging?S.categories.filter(c=>c!==old):S.categories.map(c=>c===old?name:c);
+    const shared=new Set(S.fair.shared);if(shared.delete(old))shared.add(name);S.fair.shared=[...shared];
+    delete S.catClass[old];delete S.catGroup[old];
+  }
+  if(!merging){S.catClass[name]=cls;S.catGroup[name]=grp;}          // a merged category keeps the type and group it already had
+  save();
+  toast(name===old?"Saved":`Renamed to "${name}". Updated ${moved} transaction${moved!==1?"s":""}.`);
+  return true;
+}
+function renameGroup(old,name){
+  name=(name||"").trim();
+  if(!name||name===old)return true;
+  if(groupList().includes(name)&&!confirm(`A group called "${name}" already exists. Merge "${old}" into it?`))return false;
+  S.groups=groupList().map(g=>g===old?name:g).filter((g,i,all)=>all.indexOf(g)===i);
+  S.categories.forEach(c=>{if(groupOf(c)===old)S.catGroup[c]=name;});
+  save();toast(`Group renamed to "${name}".`);return true;
+}
+function deleteCategory(c){
+  if(PROTECTED_CATS.includes(c)){toast("The app uses that category by name, so it can't be deleted.");return;}
+  const n=txCount(c);
+  if(!confirm(`Delete "${c}"?${n?` Its ${n} transaction${n!==1?"s":""} will move to Uncategorised.`:""} Rules and any budget for it are removed too. To keep the transactions under another name, use Edit and merge instead.`))return;
+  S.transactions.forEach(t=>{if(t.cat===c)t.cat="Uncategorised";});
+  S.rules=S.rules.filter(r=>r.cat!==c);
+  delete S.budgets[c];delete S.catClass[c];delete S.catGroup[c];
+  if(S.fair.shared)S.fair.shared=S.fair.shared.filter(x=>x!==c);
+  S.categories=S.categories.filter(x=>x!==c);
+  save();renderAll();
+}
+
+function renderSettings(){
+  const gsel=$("#cat-new-group");if(gsel){const cur=gsel.value;gsel.innerHTML=groupList().map(g=>`<option>${esc(g)}</option>`).join("");if(cur&&groupList().includes(cur))gsel.value=cur;}
+  const catRow=c=>{
+    if(editCat===c)return `<div class="ruleitem" style="flex-wrap:wrap">
+      <input type="text" class="grow cat-edit-name" value="${esc(c)}" style="min-width:160px">
+      <select class="cat-edit-group">${groupList().map(g=>`<option ${g===groupOf(c)?"selected":""}>${esc(g)}</option>`).join("")}</select>
+      <button class="primary cat-edit-save" data-c="${esc(c)}">Save</button><button class="ghost cat-edit-cancel">Cancel</button>
+      <div class="hint" style="flex-basis:100%;margin:0">${txCount(c)} transaction${txCount(c)!==1?"s":""} use this. Renaming updates them all, plus rules and budgets. Use another category's exact name to merge the two.</div></div>`;
+    const locked=PROTECTED_CATS.includes(c);
+    return `<div class="ruleitem">
+    <span class="chipcat" style="background:${catColor(c)}">${esc(c)}</span><span class="grow"></span>
+    <select class="classsel" data-c="${esc(c)}">
+      <option value="need">Need</option><option value="want">Want</option>
+      <option value="save">Save</option><option value="transfer">Transfer</option><option value="income">Income</option></select>
+    ${locked?`<span class="muted" title="The app uses this category by name" style="padding:0 10px">🔒</span>`:
+      `<button class="ghost cat-edit" data-c="${esc(c)}" title="Rename, merge or move to another group">✎</button><button class="ghost del" data-c="${esc(c)}" title="Delete">✕</button>`}</div>`;};
+  const groupHdr=g=>editGroup===g
+    ?`<div class="ruleitem" style="flex-wrap:wrap"><input type="text" class="grow group-edit-name" value="${esc(g)}" style="min-width:160px">
+        <button class="primary group-edit-save" data-g="${esc(g)}">Save</button><button class="ghost group-edit-cancel">Cancel</button></div>`
+    :`<div class="grouphdr">${esc(g)} <button class="ghost group-edit" data-g="${esc(g)}" title="Rename this group" style="padding:2px 8px;min-height:0">✎</button></div>`;
+  let html=`<div class="sub" style="margin-bottom:10px">Grouped for clarity. Tag each as Need / Want / Save (powers the Coach's 50/30/20). Use <b>Transfer</b> for money moving between your own or each other's accounts, which is left out of all totals so nothing double-counts. Tap <b>✎</b> to rename a category or group, move it, or merge it into another. Renaming updates every existing transaction, rule and budget.</div>`;
+  for(const g of groupList()){const cs=S.categories.filter(c=>groupOf(c)===g);if(!cs.length)continue;
+    html+=groupHdr(g)+cs.map(catRow).join("");}
+  const list=$("#cat-list");list.innerHTML=html;
+  list.querySelectorAll(".classsel").forEach(sel=>{sel.value=getClass(sel.dataset.c);
+    sel.onchange=()=>{S.catClass[sel.dataset.c]=sel.value;save();renderCoach();toast("Saved");};});
+  list.querySelectorAll(".del").forEach(b=>b.onclick=()=>deleteCategory(b.dataset.c));
+  list.querySelectorAll(".cat-edit").forEach(b=>b.onclick=()=>{editCat=b.dataset.c;editGroup=null;renderSettings();});
+  list.querySelectorAll(".cat-edit-cancel").forEach(b=>b.onclick=()=>{editCat=null;renderSettings();});
+  list.querySelectorAll(".cat-edit-save").forEach(b=>b.onclick=()=>{
+    const row=b.closest(".ruleitem");
+    if(applyCategoryEdit(b.dataset.c,row.querySelector(".cat-edit-name").value,row.querySelector(".cat-edit-group").value)){editCat=null;renderAll();}});
+  list.querySelectorAll(".group-edit").forEach(b=>b.onclick=()=>{editGroup=b.dataset.g;editCat=null;renderSettings();});
+  list.querySelectorAll(".group-edit-cancel").forEach(b=>b.onclick=()=>{editGroup=null;renderSettings();});
+  list.querySelectorAll(".group-edit-save").forEach(b=>b.onclick=()=>{
+    if(renameGroup(b.dataset.g,b.closest(".ruleitem").querySelector(".group-edit-name").value)){editGroup=null;renderAll();}});
+  $("#owner-list").innerHTML=S.owners.map(o=>`<div class="ruleitem">
+    <span>${esc(o)}</span><span class="grow"></span>
+    <button class="ghost del" data-o="${esc(o)}">✕</button></div>`).join("");
+  $("#owner-list").querySelectorAll(".del").forEach(b=>b.onclick=()=>{
+    if(S.owners.length<=1)return;S.owners=S.owners.filter(x=>x!==b.dataset.o);save();renderAll();});
+  const undo=$("#restore-undo");if(undo)undo.style.display=hasRestoreUndo()?"":"none";
+  $("#txcount").textContent=`You have ${S.transactions.length} transaction${S.transactions.length!==1?"s":""} stored.`;
+}
+
+/* ---------- fair share ---------- */
+// Spending in these categories is treated as shared by default; the user can change it.
+function defaultShared(){
+  return S.categories.filter(c=>["Groceries","Home"].includes(groupOf(c))||c==="Internet"||c==="Short-Term Insurance");
+}
+let fairOpen=false;
+function fairData(month){
+  const sharedCats=new Set(S.fair.shared||defaultShared());
+  const people=S.owners.slice(),names=people.concat(["Joint"]),n=people.length;
+  const blank=()=>Object.fromEntries(names.map(x=>[x,0]));
+  const D={people,income:blank(),spend:blank(),shared:blank(),adj:blank(),byCat:{},incMonths:{},months:new Set()};
+  names.forEach(x=>{D.byCat[x]={};D.incMonths[x]=new Set();});
+  for(const t of S.transactions){
+    const m=monthKey(t.date);if(month!=="all"&&m!==month)continue;
+    if(!names.includes(t.owner))continue;
+    D.months.add(m);
+    // money sent to your partner counts as your contribution; money received counts against theirs
+    if(t.cat==="Partner contribution"){D.adj[t.owner]-=t.amt;continue;}
+    const cls=getClass(t.cat);
+    if(cls==="income"){if(t.amt>0){D.income[t.owner]+=t.amt;D.incMonths[t.owner].add(m);}continue;}
+    if(cls!=="need"&&cls!=="want")continue;          // savings and transfers are not spending
+    D.spend[t.owner]-=t.amt;D.byCat[t.owner][t.cat]=(D.byCat[t.owner][t.cat]||0)-t.amt;
+    if(sharedCats.has(t.cat))D.shared[t.owner]-=t.amt;
+  }
+  D.sharedTotal=people.reduce((a,p)=>a+D.shared[p],0)+D.shared.Joint;
+  D.incomeEff={};D.paid={};D.pct={};D.fair={};D.diff={};
+  people.forEach(p=>{D.incomeEff[p]=D.income[p]+D.income.Joint/n;D.paid[p]=D.shared[p]+D.shared.Joint/n+D.adj[p];});
+  const totInc=people.reduce((a,p)=>a+D.incomeEff[p],0);
+  const mode=S.fair.mode;
+  people.forEach((p,i)=>{
+    let pct;
+    if(mode==="equal"||totInc<=0&&mode!=="custom")pct=1/n;
+    else if(mode==="custom"&&n===2){const a=Math.min(100,Math.max(0,+S.fair.pct||0))/100;pct=i===0?a:1-a;}
+    else pct=D.incomeEff[p]/totInc;
+    D.pct[p]=pct;D.fair[p]=D.sharedTotal*pct;D.diff[p]=D.fair[p]-D.paid[p];
+  });
+  D.noIncome=totInc<=0&&mode==="income";
+  D.adjMismatch=Math.abs(people.reduce((a,p)=>a+D.adj[p],0))>1;
+  return D;
+}
+function fairVerdict(D){
+  const P=D.people;
+  if(D.sharedTotal<=0)return{cls:"",text:"No shared spending found for this period. Check which categories count as shared, below."};
+  if(P.length!==2){const over=P.filter(p=>D.diff[p]>50).map(p=>p+" "+ZAR(D.diff[p])).join(", ");
+    return{cls:over?"owe":"ok",text:over?"Still to put in to be fair: "+over+".":"Everyone has covered a fair share."};}
+  const [a,b]=P;
+  if(Math.abs(D.diff[a])<=50)return{cls:"ok",text:"You are about square. Each of you has covered a fair share of the shared costs."};
+  const [lo,hi]=D.diff[a]>0?[a,b]:[b,a];
+  return{cls:"owe",text:lo+" has covered "+ZAR(Math.abs(D.diff[lo]))+" less than a fair share. To even it out, "+lo+" would pay "+hi+" "+ZAR(Math.abs(D.diff[lo]))+"."};
+}
+function renderFair(){
+  if(!S.fair)S.fair={mode:"income",pct:50,shared:null};
+  fillMonthSelect($("#fair-month"),true);
+  $("#fair-mode").value=S.fair.mode;
+  const pctEl=$("#fair-pct");pctEl.style.display=S.fair.mode==="custom"&&S.owners.length===2?"":"none";
+  pctEl.value=S.fair.pct;pctEl.placeholder=S.owners[0]+" %";pctEl.title=S.owners[0]+"'s share of shared costs, in %";
+  const body=$("#fair-body");
+  if(!S.transactions.length){body.innerHTML=emptyState("No transactions yet","Import your statements and mark whose account each one is, then come back.","import","Go to Import");return;}
+  const month=$("#fair-month").value||"all",D=fairData(month),P=D.people;
+  const totalSpend=P.reduce((a,p)=>a+D.spend[p],0)+D.spend.Joint;
+  const verdict=fairVerdict(D);
+  const shared=new Set(S.fair.shared||defaultShared());
+  const R0=n=>"R "+Math.round(n).toLocaleString("en-ZA");
+
+  // who spends the most
+  const bars=P.concat(D.spend.Joint?["Joint"]:[]);
+  const maxSpend=Math.max(1,...bars.map(p=>D.spend[p]));
+  const spendCard=`<div class="card pad mt"><div class="between" style="margin-bottom:6px"><h3>Who spends the most</h3><span class="sub">${monthLabel(month)}</span></div>
+    ${bars.map((p,i)=>`<div class="catbar"><span class="name">${esc(p)}</span>
+      <span class="val amt">${ZAR(D.spend[p])} <span class="muted">· ${totalSpend?Math.round(D.spend[p]/totalSpend*100):0}% of all spending${p!=="Joint"&&D.incomeEff[p]>0?` · ${Math.round(D.spend[p]/D.incomeEff[p]*100)}% of income`:""}</span></span>
+      <div class="track"><div class="fill" style="width:${Math.max(3,D.spend[p]/maxSpend*100)}%;background:var(--cat${i%10})"></div></div></div>`).join("")}
+    <div class="hint">Spending is what you spent on needs and wants. Savings and transfers between accounts are not counted.</div></div>`;
+
+  // what they spend it on
+  const cols=bars,tot={},cats=new Set();
+  cols.forEach(p=>Object.keys(D.byCat[p]).forEach(c=>cats.add(c)));
+  cats.forEach(c=>tot[c]=cols.reduce((a,p)=>a+(D.byCat[p][c]||0),0));
+  const sorted=[...cats].filter(c=>Math.abs(tot[c])>=1).sort((a,b)=>tot[b]-tot[a]);
+  const top=sorted.slice(0,14),rest=sorted.slice(14);
+  const cell=(p,c)=>{const v=D.byCat[p][c]||0;if(Math.abs(v)<1)return`<td class="amt z">·</td>`;
+    const hi=cols.every(q=>q===p||(D.byCat[q][c]||0)<v)&&cols.length>1;
+    return`<td class="amt" style="${hi?"font-weight:800":""}">${R0(v)}</td>`;};
+  const rows=top.map(c=>`<tr><td title="${esc(c)}">${esc(c)}${shared.has(c)?` <span class="muted" title="counts as shared">·shared</span>`:""}</td>${cols.map(p=>cell(p,c)).join("")}<td class="amt tot">${R0(tot[c])}</td></tr>`).join("");
+  const restRow=rest.length?`<tr><td>All other categories</td>${cols.map(p=>`<td class="amt">${R0(rest.reduce((a,c)=>a+(D.byCat[p][c]||0),0))}</td>`).join("")}<td class="amt tot">${R0(rest.reduce((a,c)=>a+tot[c],0))}</td></tr>`:"";
+  const catCard=`<div class="card pad mt"><div class="between" style="margin-bottom:10px"><h3>What it is spent on</h3><span class="sub">bold = who spent more</span></div>
+    <div class="matrix-wrap"><table class="matrix"><thead><tr><th>Category</th>${cols.map(p=>`<th>${esc(p)}</th>`).join("")}<th class="tot">Total</th></tr></thead>
+    <tbody>${rows}${restRow}<tr class="sum"><td>Total spent</td>${cols.map(p=>`<td class="amt">${R0(D.spend[p])}</td>`).join("")}<td class="amt tot">${R0(totalSpend)}</td></tr></tbody></table></div></div>`;
+
+  // shared costs and fairness
+  const fairRows=P.map(p=>`<tr><td>${esc(p)}</td><td class="amt">${R0(D.incomeEff[p])}</td><td class="amt">${Math.round(D.pct[p]*100)}%</td>
+    <td class="amt">${R0(D.fair[p])}</td><td class="amt">${R0(D.paid[p])}</td>
+    <td class="amt" style="font-weight:800;color:${D.diff[p]>50?"var(--warn)":D.diff[p]<-50?"var(--in)":"inherit"}">${D.diff[p]>50?"short "+R0(D.diff[p]):D.diff[p]<-50?"ahead "+R0(-D.diff[p]):"square"}</td></tr>`).join("");
+  const modeText={income:"in proportion to income",equal:"equally",custom:"by your chosen percentage"}[S.fair.mode];
+  const fairCard=`<div class="card pad mt"><div class="between" style="margin-bottom:8px"><h3>Are you contributing fairly?</h3><span class="sub">shared costs split ${modeText}</span></div>
+    <div class="verdict ${verdict.cls}">${esc(verdict.text)}</div>
+    <div class="sub">Shared costs in this period: <b>${ZAR(D.sharedTotal)}</b>${D.shared.Joint?` (including ${ZAR(D.shared.Joint)} from the joint account, counted as paid half by each of you)`:""}.</div>
+    <div class="matrix-wrap" style="margin-top:10px"><table class="matrix"><thead><tr><th>Person</th><th>Income</th><th>Fair share</th><th>Fair amount</th><th>Paid</th><th>Result</th></tr></thead><tbody>${fairRows}</tbody></table></div>
+    <div class="hint">Paid = shared spending from their own accounts, plus money sent to the other person (category <b>Partner contribution</b>) minus money received from them.</div>
+    ${notes(D)}</div>`;
+
+  // choose shared categories
+  const chooser=groupList().map(g=>{const cs=S.categories.filter(c=>groupOf(c)===g&&["need","want"].includes(getClass(c)));
+    if(!cs.length)return"";
+    return`<div style="margin:12px 0 4px;font-weight:700;font-size:13px">${esc(g)}</div><div class="row" style="gap:6px 18px">${cs.map(c=>
+      `<label style="display:flex;gap:6px;align-items:center;font-size:14px"><input type="checkbox" class="fair-cat" value="${esc(c)}" ${shared.has(c)?"checked":""}> ${esc(c)}</label>`).join("")}</div>`;}).join("");
+  const chooseCard=`<div class="card pad mt"><details ${fairOpen?"open":""}><summary style="cursor:pointer;font-weight:700">Which categories are shared costs? (${shared.size} chosen)</summary>
+    <div class="hint" style="margin-top:8px">Tick the things you both benefit from, such as rent or bond, levies, groceries, utilities and insurance. Personal spending stays out of the fairness calculation.</div>${chooser}
+    <div class="hint" style="margin-top:12px">When one of you sends the other money towards shared costs, give those transactions the category <b>Partner contribution</b> (use Rules to do it automatically). Otherwise that money is ignored.</div></details></div>`;
+
+  body.innerHTML=fairCard+spendCard+catCard+chooseCard;
+  const dt=body.querySelector("details");if(dt)dt.ontoggle=()=>{fairOpen=dt.open;};
+}
+function notes(D){
+  const out=[],M=D.months.size;
+  if(D.noIncome)out.push("No income was found for this period, so shared costs are split equally. Income is read from transactions in the Income category.");
+  else if(S.fair.mode==="income")D.people.forEach(p=>{const k=D.incMonths[p].size;
+    if(k<M)out.push(`${p}: income recorded in ${k} of ${M} month${M===1?"":"s"}. If statements are missing from the import, the income split is not reliable.`);});
+  if(D.adjMismatch)out.push("Money sent between you under Partner contribution does not match on both sides. One of the accounts may not be imported yet.");
+  const unc=D.people.concat(["Joint"]).reduce((a,p)=>a+(D.byCat[p]["Uncategorised"]||0),0);
+  if(unc>=1)out.push(`${ZAR(unc)} of spending is still Uncategorised, so it is not counted as shared. Categorise it under Transactions or Rules.`);
+  return out.map(x=>`<div class="fnote">${esc(x)}</div>`).join("");
+}
+
+/* ---------- coach ---------- */
+function coachMonths(){const m=monthsList();return m.length?m:[new Date().toISOString().slice(0,7)];}
+function fillCoachMonth(){const sel=$("#coach-month");const cur=sel.value;sel.innerHTML="";
+  for(const k of coachMonths())sel.appendChild(new Option(monthLabel(k),k));
+  if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;}
+function monthStats(month){
+  const tx=S.transactions.filter(t=>monthKey(t.date)===month);
+  let income=0,needs=0,wants=0,save=0;const spentByCat={};
+  for(const t of tx){
+    const cls=getClass(t.cat);
+    if(cls==="transfer")continue;
+    if(t.amt>0){income+=t.amt;continue;}
+    const a=Math.abs(t.amt);
+    spentByCat[t.cat]=(spentByCat[t.cat]||0)+a;
+    if(cls==="need")needs+=a;else if(cls==="save")save+=a;else if(cls==="income"){}else wants+=a;
+  }
+  const spend=needs+wants+save;
+  return {month,income,needs,wants,save,spend,net:income-spend,spentByCat,count:tx.length};
+}
+function avgMonthlyNeeds(){
+  const ms=monthsList();if(!ms.length)return 0;
+  let sum=0,n=0;for(const m of ms.slice(0,3)){const s=monthStats(m);if(s.needs>0){sum+=s.needs;n++;}}
+  return n?sum/n:monthStats(ms[0]).needs;
+}
+function pct(part,whole){return whole>0?part/whole:0;}
+function coachScore(s,monthsCovered,target){
+  const sr=s.income>0?(s.income-s.needs-s.wants)/s.income:0;
+  const srScore=Math.max(0,Math.min(1,sr/0.20))*30;
+  const efScore=target>0?Math.max(0,Math.min(1,monthsCovered/target))*20:0;
+  const nPct=pct(s.needs,s.income),wPct=pct(s.wants,s.income);
+  const needScore=s.income>0?Math.max(0,Math.min(1,1-Math.max(0,nPct-0.5)/0.5))*15:0;
+  const wantScore=s.income>0?Math.max(0,Math.min(1,1-Math.max(0,wPct-0.3)/0.3))*15:0;
+  const withinScore=s.income>0?(s.net>=0?20:Math.max(0,20*(1+s.net/s.income))):(s.net>=0?20:0);
+  return {total:Math.round(srScore+efScore+needScore+wantScore+withinScore),sr};
+}
+function coachTips(s,monthsCovered,target,monthlyNeeds){
+  const tips=[];const ef=S.coach.emergencyFund||0;
+  const savings=s.income-s.needs-s.wants;const sr=s.income>0?savings/s.income:0;
+  if(s.income>0&&s.net<0)
+    tips.push(["warn","🚨",`You spent <b>${ZAR(-s.net)}</b> more than you earned this month. First goal: spend less than you earn.`]);
+  if(target>0&&monthsCovered<target&&monthlyNeeds>0){
+    const gap=Math.max(0,target*monthlyNeeds-ef);const per=savings>0?savings:0;
+    const eta=per>0?Math.ceil(gap/per):null;
+    tips.push(["warn","🛟",`Emergency fund: <b>${ef?monthsCovered.toFixed(1):"0"} months</b> of expenses covered (aim for ${target}). About <b>${ZAR(gap)}</b> to go`+(eta?` — roughly ${eta} month${eta!==1?"s":""} at your current saving pace.`:`. Free up some room to save so you can start building it.`)]);
+  }
+  if(s.income>0&&sr<0.20){const short=0.20*s.income-savings;
+    tips.push(["warn","💰",`Savings rate is <b>${Math.round(sr*100)}%</b> (aim for 20%). Putting about <b>${ZAR(short)}</b> more to savings each month — first, on payday — gets you there.`]);}
+  const wPct=pct(s.wants,s.income);
+  if(s.income>0&&wPct>0.30){let bc=null,bv=0;for(const[c,v]of Object.entries(s.spentByCat)){if(getClass(c)==="want"&&v>bv){bv=v;bc=c;}}
+    const free=s.wants-0.30*s.income;
+    tips.push(["","🎯",`Wants are <b>${Math.round(wPct*100)}%</b> of income (target 30%)`+(bc?`, led by <b>${esc(bc)}</b> at ${ZAR(bv)}`:"")+`. Trimming to 30% frees about <b>${ZAR(free)}</b> a month.`]);}
+  const nPct=pct(s.needs,s.income);
+  if(s.income>0&&nPct>0.55)
+    tips.push(["","🏠",`Needs are <b>${Math.round(nPct*100)}%</b> of income — on the high side, which is normal right after buying a home. Hold the line on new fixed costs while the bond settles in.`]);
+  const over=[];for(const[c,lim]of Object.entries(S.budgets)){if(lim>0){const sp=s.spentByCat[c]||0;if(sp>lim)over.push([c,sp-lim]);}}
+  over.sort((a,b)=>b[1]-a[1]).slice(0,2).forEach(([c,d])=>tips.push(["warn","📉",`You're <b>${ZAR(d)}</b> over budget on <b>${esc(c)}</b> this month.`]));
+  if(s.income>0&&sr>=0.20&&(target<=0||monthsCovered>=target))
+    tips.push(["good","🌟",`You're on track — savings and emergency fund are healthy. A strong next move is paying a bit extra into your bond (it saves interest) or starting a long-term investment.`]);
+  if(!tips.length)tips.push(["good","👍",`Looking balanced this month. Keep logging so the picture stays accurate.`]);
+  tips.push(["","🔧",`New-home tip: keep a small maintenance buffer (a common rule of thumb is ~1% of the property value a year) so repairs don't wreck the budget.`]);
+  return tips.slice(0,6);
+}
+function renderCoach(){
+  fillCoachMonth();
+  const body=$("#coach-body");
+  if(!S.transactions.length){body.innerHTML=emptyState("No data yet","The Coach needs your transactions. Import a statement first, then come back.","import","Go to Import");return;}
+  const month=$("#coach-month").value||coachMonths()[0];
+  const s=monthStats(month);
+  const monthlyNeeds=avgMonthlyNeeds()||s.needs;
+  const ef=S.coach.emergencyFund||0,target=S.coach.targetMonths||3;
+  const monthsCovered=(ef>0&&monthlyNeeds>0)?ef/monthlyNeeds:0;
+  const sc=coachScore(s,monthsCovered,target);
+  const band=sc.total>=80?["Excellent","var(--in)","var(--in-soft)","var(--in)"]
+    :sc.total>=60?["Good","var(--accent-ink)","var(--accent-soft)","var(--accent)"]
+    :sc.total>=40?["Getting there","var(--warn)","var(--surface-2)","var(--warn)"]
+    :["Needs work","var(--out)","var(--out-soft)","var(--out)"];
+  const hasIncome=s.income>0;
+  const savingsPart=Math.max(0,s.income-s.needs-s.wants);
+  const base=hasIncome?(s.needs+s.wants+savingsPart||1):(s.spend||1);
+  const w=v=>Math.round(v/base*100);
+  const denom=hasIncome?s.income:s.spend;
+  const nP=Math.round(pct(s.needs,denom)*100),wP=Math.round(pct(s.wants,denom)*100),sP=Math.round(pct(hasIncome?savingsPart:s.save,denom)*100);
+  const cmp=(actual,tgt)=>actual<=tgt?`<span class="ok">${actual}%</span>`:`<span class="high">${actual}%</span>`;
+  const expCats=S.categories.filter(c=>getClass(c)!=="income"&&getClass(c)!=="transfer");
+  body.innerHTML=`
+    <div class="card pad">
+      <div class="coach-head">
+        <div class="ring" style="--p:${sc.total};--ring-color:${band[3]}"><div class="ring-inner"><div class="ring-num">${sc.total}</div><div class="ring-lbl">/ 100</div></div></div>
+        <div style="flex:1;min-width:180px">
+          <span class="band" style="color:${band[1]};background:${band[2]}">${band[0]}</span>
+          <div style="font-size:14px;color:var(--ink-soft)">Your money health for <b>${monthLabel(month)}</b>, across both of you.</div>
+          <div class="row" style="margin-top:12px;gap:22px">
+            <div class="metric"><div class="cap">Money in</div><div class="big pos">${ZAR(s.income)}</div></div>
+            <div class="metric"><div class="cap">Money out</div><div class="big neg">${ZAR(s.spend)}</div></div>
+            <div class="metric"><div class="cap">Net</div><div class="big ${s.net<0?'neg':'pos'}">${ZARsigned(s.net)}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pad mt">
+      <div class="between"><h3>The 50 / 30 / 20 split</h3><span class="sub">${hasIncome?"% of income":"% of spending"}</span></div>
+      <div class="split-bar">
+        ${s.needs>0?`<div class="seg need" style="width:${w(s.needs)}%">${w(s.needs)>8?"Needs":""}</div>`:""}
+        ${s.wants>0?`<div class="seg want" style="width:${w(s.wants)}%">${w(s.wants)>8?"Wants":""}</div>`:""}
+        ${(hasIncome?savingsPart:s.save)>0?`<div class="seg save" style="width:${w(hasIncome?savingsPart:s.save)}%">${w(hasIncome?savingsPart:s.save)>8?"Savings":""}</div>`:""}
+      </div>
+      <div class="legend">
+        <span class="k"><span class="sw" style="background:#3b6ea5"></span> Needs ${cmp(nP,50)} <span class="muted">/ 50%</span></span>
+        <span class="k"><span class="sw" style="background:#c07a3e"></span> Wants ${cmp(wP,30)} <span class="muted">/ 30%</span></span>
+        <span class="k"><span class="sw" style="background:var(--in)"></span> Savings <span class="${sP>=20?'ok':'high'}">${sP}%</span> <span class="muted">/ 20%</span></span>
+      </div>
+      ${!hasIncome?`<div class="coach-note" style="color:var(--warn)">No income recorded for ${monthLabel(month)} — import the statement that shows your pay to compare against the 50/30/20 targets.</div>`:""}
+    </div>
+
+    <div class="coach-cols mt">
+      <div class="card pad">
+        <h3 style="margin-bottom:4px">Savings rate</h3>
+        <div class="metric"><div class="big ${sc.sr>=0.20?'pos':''}">${hasIncome?Math.round(sc.sr*100)+"%":"—"}</div></div>
+        <div class="sub">${hasIncome?`of income kept this month · target <b>20%+</b>`:`add income to calculate`}</div>
+        <div class="track" style="margin-top:12px;height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden">
+          <div class="fill" style="height:100%;width:${Math.max(0,Math.min(100,Math.round(sc.sr/0.20*100)))}%;background:var(--in)"></div></div>
+      </div>
+      <div class="card pad">
+        <h3 style="margin-bottom:8px">Emergency fund</h3>
+        <div class="ef-row">
+          <div class="ef-field"><label>Money you have saved (R)</label><input type="number" id="coach-ef" inputmode="decimal" value="${ef||""}" placeholder="0"></div>
+          <div class="ef-field"><label>Target (months)</label>
+            <select id="coach-eftarget">${[3,4,5,6].map(n=>`<option value="${n}" ${n===target?"selected":""}>${n} months</option>`).join("")}</select></div>
+        </div>
+        <div class="sub">Covers <b>${monthlyNeeds>0?(ef/monthlyNeeds||0).toFixed(1):"0"} months</b> of your ~${ZAR(monthlyNeeds)}/mo essentials.</div>
+        <div class="track" style="margin-top:10px;height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden">
+          <div class="fill" style="height:100%;width:${Math.max(0,Math.min(100,Math.round(monthsCovered/target*100)))}%;background:${monthsCovered>=target?'var(--in)':'var(--warn)'}"></div></div>
+      </div>
+    </div>
+
+    <div class="card pad mt">
+      <div class="between"><h3>Budgets — set a monthly cap, see what's left</h3></div>
+      <div class="sub" style="margin-bottom:6px">Leave blank for no limit. Change a number to save it.</div>
+      ${groupList().map(g=>{const cs=expCats.filter(c=>groupOf(c)===g);if(!cs.length)return"";
+        return `<div class="grouphdr">${esc(g)}</div>`+cs.map(c=>{const sp=s.spentByCat[c]||0;const lim=S.budgets[c]||0;
+          const pctv=lim>0?Math.min(100,sp/lim*100):0;const over=lim>0&&sp>lim;
+          return `<div class="budget-row">
+            <div><span class="bname">${esc(c)}</span><div class="bspent">${ZAR(sp)} spent${lim>0?` · ${over?`<span class="high">${ZAR(sp-lim)} over</span>`:`${ZAR(lim-sp)} left`}`:""}</div></div>
+            <div><input type="number" inputmode="decimal" class="binput" data-cat="${esc(c)}" value="${lim||""}" placeholder="—"></div>
+            ${lim>0?`<div class="btrack"><div class="bfill" style="width:${pctv}%;background:${over?'var(--out)':'var(--in)'}"></div></div>`:""}
+          </div>`;}).join("");}).join("")}
+    </div>
+
+    <div class="card pad mt">
+      <h3 style="margin-bottom:12px">Your coaching tips</h3>
+      ${coachTips(s,monthsCovered,target,monthlyNeeds).map(([cls,ic,txt])=>`<div class="tip ${cls}"><span class="icon">${ic}</span><div class="body">${txt}</div></div>`).join("")}
+    </div>`;
+  // bindings
+  const efIn=$("#coach-ef");if(efIn)efIn.onchange=()=>{S.coach.emergencyFund=Math.max(0,+efIn.value||0);save();renderCoach();};
+  const efT=$("#coach-eftarget");if(efT)efT.onchange=()=>{S.coach.targetMonths=+efT.value;save();renderCoach();};
+  body.querySelectorAll(".binput").forEach(inp=>inp.onchange=()=>{const c=inp.dataset.cat;const v=+inp.value||0;
+    if(v>0)S.budgets[c]=v;else delete S.budgets[c];save();renderCoach();});
+}
+
+/* ---------- views ---------- */
+function switchView(v){
+  document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
+  $("#view-"+v).classList.add("active");
+  document.querySelectorAll(".nav-set button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
+  window.scrollTo(0,0);
+}
+// Is there anything worth protecting, and has it been backed up or synced lately?
+const DAY=864e5;
+function isCustomised(){const f=fresh();return S.transactions.length>0||S.categories.length!==f.categories.length||S.rules.length!==f.rules.length;}
+function needsBackup(){
+  if(!isCustomised())return false;
+  const recent=t=>t&&Date.now()-t<14*DAY;
+  if(recent(readMeta().lastBackup))return false;
+  try{return !(syncReady()&&recent(syncCfg.last));}catch(e){return true;}   // sync may not be loaded yet
+}
+function renderStorageBanner(){
+  const el=$("#storage-banner");if(!el)return;
+  const note=(cls,msg,btn)=>`<div class="stnote ${cls}"><span>${msg}</span>${btn||""}</div>`;
+  let html="";
+  if(storageProblem==="blocked")html=note("bad","<b>This browser is not saving your data.</b> You may be in a private or incognito window, or storage is blocked. Anything you add here is lost when you close it. Open the app in a normal Chrome window (or install it) and use that every time.");
+  else if(storageProblem==="full")html=note("bad","<b>Storage is full, so new changes can't be saved.</b> Download a backup in Settings, then remove transactions you no longer need.");
+  else if(storageProblem==="corrupt")html=note("bad","<b>Your saved data could not be read, so the app started empty.</b> A copy of what was there is still on this device. Please don't add or import anything yet, and ask for help to restore it.");
+  else if(location.protocol==="file:"&&!readMeta().hideFileNote)html=note("warn","You opened the app from a file. Your data is stored for that exact file location, so a moved or copied file shows an empty app. The installed app or web address, with sync turned on, keeps everything in one place.",'<button class="ghost small" id="storage-dismiss">Got it</button>');
+  else if(needsBackup())html=note("warn","You have not saved a backup lately. Turn on sync, or download a backup in Settings, so your categories, rules and transactions cannot be lost.",'<button class="ghost small" onclick="switchView(\'settings\')">Open Settings</button>');
+  el.innerHTML=html;
+  const d=el.querySelector("#storage-dismiss");if(d)d.onclick=()=>{writeMeta({hideFileNote:true});renderStorageBanner();};
+}
+function renderAll(){renderStorageBanner();renderDashboard();renderTransactions();renderCoach();renderFair();renderRules();renderSettings();renderSync();}
+
+/* ---------- sync (Google Drive) ---------- */
+// Everything here is wiring: encryption and merging live in sync.js, the Google calls in sync-drive.js.
+const SYNC_KEY="ourmoney.sync";
+let syncCfg=(()=>{try{return JSON.parse(localStorage.getItem(SYNC_KEY)||"{}");}catch(e){return{};}})();
+const saveSyncCfg=()=>{try{localStorage.setItem(SYNC_KEY,JSON.stringify(syncCfg));}catch(e){}};
+let syncBusy=false,syncDirty=false,syncTimer=null,syncNote="",syncNeedsTap=false,syncPassDraft="";
+const hasSync=()=>typeof DriveBackend!=="undefined"&&typeof syncOnce!=="undefined";
+const syncReady=()=>hasSync()&&DriveBackend.configured()&&!!syncCfg.fileId&&!!syncCfg.pass;
+const syncCopy=()=>JSON.parse(JSON.stringify(S));
+const syncIO=()=>({
+  pass:syncCfg.pass,
+  getState:syncCopy,
+  // Merge into what is on the phone *now*, so anything edited while the network was busy is kept.
+  applyState:async merged=>{S=Object.assign(fresh(),mergeStates(syncCopy(),merged).state);baseline();
+    try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}renderAll();}
+});
+const fmtTime=ts=>{const d=new Date(ts),t=d.toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit"});
+  return d.toDateString()===new Date().toDateString()?t:d.toLocaleDateString("en-ZA",{day:"numeric",month:"short"})+" "+t;};
+const NEEDS_SIGNIN=["auth","interaction_required","login_required","popup_closed","popup_failed_to_open","timeout","access_denied","immediate_failed"];
+async function runSync(interactive){
+  if(!syncReady())return;
+  if(syncBusy){syncDirty=true;return;}
+  if(!interactive&&syncNeedsTap)return;
+  syncBusy=true;syncNote="Syncing…";renderSync();
+  try{
+    await DriveBackend.signIn(interactive);
+    stampChanges();
+    const r=await syncOnce(DriveBackend,syncCfg.fileId,syncIO());
+    syncNeedsTap=false;syncCfg.last=r.at;syncCfg.error="";
+    syncNote=(r.added+r.updated+r.removed)?`Up to date. Brought in ${r.added} new, ${r.updated} changed and ${r.removed} deleted from the other phone.`:"Up to date.";
+    if(interactive)toast("Synced");
+  }catch(e){
+    console.error(e);syncNote="";
+    if(!interactive&&NEEDS_SIGNIN.includes(e.code)){syncNeedsTap=true;syncCfg.error="Tap Sync now to sign in to Google.";}
+    else{syncCfg.error=e.message||"Sync failed.";if(interactive)toast(syncCfg.error);}
+  }
+  syncBusy=false;saveSyncCfg();renderSync();
+  if(syncDirty){syncDirty=false;setTimeout(()=>runSync(false),500);}
+}
+window.syncAfterSave=()=>{if(!syncReady())return;if(syncBusy){syncDirty=true;return;}clearTimeout(syncTimer);syncTimer=setTimeout(()=>runSync(false),4000);};
+const passOk=p=>p&&p.length>=8;
+async function syncCreate(){
+  const pass=$("#sync-pass").value;syncPassDraft=pass;
+  if(!passOk(pass)){toast("Choose a passphrase of at least 8 characters.");return;}
+  syncBusy=true;syncNote="Creating the shared file…";renderSync();
+  try{
+    await DriveBackend.signIn(true);
+    stampChanges();
+    const f=await DriveBackend.create("MuStash sync (encrypted, do not edit)",await encryptState(syncCopy(),pass));
+    syncCfg={fileId:f.id,fileName:f.name,pass,last:Date.now(),email:await DriveBackend.who(),error:""};saveSyncCfg();
+    syncPassDraft="";syncNote="Created. Now share the file with your partner in Google Drive, as described below.";toast("Shared file created");
+  }catch(e){console.error(e);syncNote="";toast(e.message);}
+  syncBusy=false;renderSync();
+}
+async function syncJoin(){
+  const pass=$("#sync-pass").value;syncPassDraft=pass;
+  if(!passOk(pass)){toast("Enter the same passphrase your partner chose (at least 8 characters).");return;}
+  try{
+    const f=await DriveBackend.pick();if(!f)return;
+    syncCfg={fileId:f.id,fileName:f.name,pass,last:0,email:await DriveBackend.who(),error:""};saveSyncCfg();
+    syncNeedsTap=false;
+    await runSync(true);
+    if(syncCfg.error){const msg=syncCfg.error;syncCfg={};saveSyncCfg();syncNote=msg;}   // wrong passphrase or no access: do not stay half connected
+    else syncPassDraft="";
+  }catch(e){console.error(e);toast(e.message);}
+  renderSync();
+}
+function syncDisconnect(){
+  if(!confirm("Disconnect this phone from sync? Your data stays on this phone and in Drive, and you can reconnect any time."))return;
+  syncCfg={};saveSyncCfg();DriveBackend.signOut();syncNote="";syncNeedsTap=false;renderSync();
+}
+function renderSync(){
+  renderStorageBanner();
+  const el=$("#sync-card");if(!el)return;
+  const tag=document.querySelector(".privacy .txt");
+  if(tag)tag.textContent=syncReady()&&syncCfg.last&&!syncCfg.error?"Private · synced "+fmtTime(syncCfg.last):"Private · on this device";
+  let body;
+  if(!hasSync()){
+    body=`<div class="sub">Sync files are not loaded, so sync is switched off. Everything else works as normal.</div>`;
+  }else if(!DriveBackend.configured()){
+    body=`<div class="sub">Sync lets the two of you share one set of data through your own Google Drive, encrypted so Google cannot read it. It needs a one-time setup: follow <b>SYNC-SETUP.md</b>, then fill in <b>sync-config.js</b>.</div>`;
+  }else if(!syncCfg.fileId){
+    body=`<div class="sub" style="margin-bottom:12px">Keep both phones in step through a shared file in your own Google Drive. The file is encrypted on this phone with a passphrase before it is uploaded, so Google only stores scrambled data. Pick one passphrase and use the same one on both phones. <b>If it is lost, the data in Drive cannot be recovered.</b></div>
+      <div class="maprow"><label>Sync passphrase</label><input type="password" id="sync-pass" autocomplete="off" value="${esc(syncPassDraft)}" placeholder="at least 8 characters"></div>
+      <div class="row" style="margin-top:12px"><button class="primary" id="sync-create" ${syncBusy?"disabled":""}>This is the first phone: create the shared file</button></div>
+      <div class="row" style="margin-top:10px"><button id="sync-join" ${syncBusy?"disabled":""}>My partner already did that: choose their file</button></div>
+      ${syncNote?`<div class="hint" style="margin-top:10px">${esc(syncNote)}</div>`:""}`;
+  }else{
+    const link="https://drive.google.com/file/d/"+encodeURIComponent(syncCfg.fileId)+"/view";
+    body=`<div class="kv"><span class="muted">File</span><span>${esc(syncCfg.fileName||"")}</span></div>
+      <div class="kv"><span class="muted">Signed in as</span><span>${esc(syncCfg.email||"—")}</span></div>
+      <div class="kv"><span class="muted">Last synced</span><span>${syncCfg.last?fmtTime(syncCfg.last):"not yet"}</span></div>
+      ${syncCfg.error?`<div class="fnote">${esc(syncCfg.error)}</div>`:""}
+      ${syncNote?`<div class="hint" style="margin-top:6px">${esc(syncNote)}</div>`:""}
+      <div class="row" style="margin-top:12px"><button class="primary" id="sync-now" ${syncBusy?"disabled":""}>Sync now</button>
+        <a href="${link}" target="_blank" rel="noopener"><button type="button">Open the file in Drive</button></a>
+        <span class="grow"></span><button class="danger" id="sync-off">Disconnect this phone</button></div>
+      <div class="hint" style="margin-top:10px">Your partner needs access to this file. In Google Drive, share it (or the folder it is in) with their Google account as <b>Editor</b>. On their phone they choose "My partner already did that" and pick the file.</div>`;
+  }
+  el.innerHTML=`<h3 style="margin-bottom:8px">Sync between your phones</h3>${body}`;
+  const on=(id,fn)=>{const b=el.querySelector(id);if(b)b.onclick=fn;};
+  on("#sync-create",syncCreate);on("#sync-join",syncJoin);on("#sync-now",()=>runSync(true));on("#sync-off",syncDisconnect);
+  const pi=el.querySelector("#sync-pass");if(pi)pi.oninput=()=>{syncPassDraft=pi.value;};
+}
+
+/* ---------- events ---------- */
+document.querySelectorAll(".nav-set").forEach(n=>n.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-view]");if(b)switchView(b.dataset.view);}));
+$("#dash-month").onchange=renderDashboard;$("#dash-owner").onchange=renderDashboard;
+$("#coach-month").onchange=renderCoach;
+$("#fair-month").onchange=renderFair;
+$("#fair-mode").onchange=e=>{S.fair.mode=e.target.value;save();renderFair();};
+$("#fair-pct").onchange=e=>{S.fair.pct=Math.min(100,Math.max(0,+e.target.value||0));save();renderFair();};
+$("#fair-body").addEventListener("change",e=>{
+  if(!e.target.classList.contains("fair-cat"))return;
+  S.fair.shared=[...document.querySelectorAll(".fair-cat:checked")].map(c=>c.value);save();renderFair();});
+["#tx-search","#tx-month","#tx-owner","#tx-cat"].forEach(s=>{const e=$(s);e.oninput=renderTransactions;e.onchange=renderTransactions;});
+$("#tx-clearfilters").onclick=()=>{$("#tx-search").value="";$("#tx-month").value="all";$("#tx-owner").value="all";$("#tx-cat").value="all";renderTransactions();};
+$("#tx-delshown").onclick=()=>{const ids=_shownIds||[];if(!ids.length){toast("Nothing shown to delete.");return;}
+  if(confirm(`Delete the ${ids.length} transaction${ids.length!==1?"s":""} currently shown? This can't be undone — filter first to target a specific batch.`)){
+    const set=new Set(ids);S.transactions=S.transactions.filter(t=>!set.has(t.id));save();renderAll();toast("Deleted "+ids.length);}};
+$("#pickfile").onclick=()=>$("#fileinput").click();
+$("#fileinput").onchange=e=>{handleFiles(e.target.files);e.target.value="";};
+const drop=$("#drop");
+["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag");}));
+drop.addEventListener("drop",e=>handleFiles(e.dataTransfer.files));
+$("#rule-add").onclick=()=>{const kw=$("#rule-kw").value.trim();const cat=$("#rule-cat").value;
+  if(!kw)return;S.rules.unshift({kw,cat});$("#rule-kw").value="";save();renderRules();toast("Rule added");};
+$("#rule-recat").onclick=()=>{let n=0;S.transactions.forEach(t=>{const c=categorise(t.desc);if(c!==t.cat){t.cat=c;n++;}});
+  save();renderAll();toast(`Re-categorised ${n} transaction${n!==1?"s":""}.`);};
+$("#cat-add").onclick=()=>{const c=$("#cat-new").value.trim();if(!c||S.categories.includes(c))return;
+  S.categories.push(c);S.catGroup[c]=$("#cat-new-group").value||"Other";S.catClass[c]=$("#cat-new-class").value||"want";
+  $("#cat-new").value="";save();renderAll();toast("Category added");};
+$("#owner-add").onclick=()=>{const o=$("#owner-new").value.trim();if(!o||S.owners.includes(o))return;
+  S.owners.push(o);$("#owner-new").value="";save();renderAll();};
+$("#backup").onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="mustash-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);writeMeta({lastBackup:Date.now()});renderStorageBanner();toast("Backup downloaded");};
+$("#restore-btn").onclick=()=>$("#restore-input").click();
+// Restoring replaces everything, so it shows what will change first, keeps a safety copy, and can be undone.
+const BEFORE_KEY=KEY+".before-restore";
+function summarise(st){
+  const f=fresh();
+  return{tx:(st.transactions||[]).length,
+    customCats:(st.categories||[]).filter(c=>!f.categories.includes(c)).length,
+    customRules:(st.rules||[]).filter(r=>!f.rules.some(d=>d.kw===r.kw&&d.cat===r.cat)).length};
+}
+const describe=x=>`${x.tx} transactions, ${x.customCats} custom categories, ${x.customRules} custom rules`;
+function hasRestoreUndo(){try{return !!localStorage.getItem(BEFORE_KEY);}catch(e){return false;}}
+function afterRestore(){baseline();save();renderAll();switchView("dashboard");}
+$("#restore-input").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{
+    let p;try{p=JSON.parse(rd.result);if(!p.transactions)throw 0;}catch(err){toast("That doesn't look like a valid backup file.");return;}
+    const now=summarise(S),then=summarise(p);
+    const fewer=then.customCats<now.customCats||then.customRules<now.customRules;
+    if(!confirm(`Replace what is in the app now with this backup?\n\nIn the app now: ${describe(now)}\nIn the backup: ${describe(then)}\n`+
+      (fewer?"\nWARNING: the backup has FEWER custom categories or rules than the app has now. Restoring it will remove them.\n":"")+
+      "\nYour current data is kept first, so you can undo this in Settings."))return;
+    try{localStorage.setItem(BEFORE_KEY,JSON.stringify(S));}catch(err){}
+    S=Object.assign(fresh(),p);if((S.version||0)<5)addTransferRules(S);if((S.version||0)<6)addPartnerCategory(S);S.version=6;
+    afterRestore();toast("Restored: "+describe(summarise(S))+".");
+  };rd.readAsText(f);e.target.value="";};
+$("#restore-undo").onclick=()=>{
+  let prev;try{prev=JSON.parse(localStorage.getItem(BEFORE_KEY));}catch(e){}
+  if(!prev){toast("Nothing to undo.");return;}
+  if(!confirm("Go back to what was in the app before the last restore?\n\n"+describe(summarise(prev))))return;
+  S=Object.assign(fresh(),prev);try{localStorage.removeItem(BEFORE_KEY);}catch(e){}
+  afterRestore();toast("Undone: "+describe(summarise(S))+".");};
+$("#wipe").onclick=()=>{if(confirm("Delete ALL your data from this device? This cannot be undone. (Download a backup first if unsure.) If you use sync, your shared copy in Drive is not deleted and will come back at the next sync.")){
+  S=fresh();baseline();save();renderAll();switchView("dashboard");toast("All data deleted");}};
+$("#rule-kw").addEventListener("keydown",e=>{if(e.key==="Enter")$("#rule-add").click();});
+$("#cat-new").addEventListener("keydown",e=>{if(e.key==="Enter")$("#cat-add").click();});
+$("#owner-new").addEventListener("keydown",e=>{if(e.key==="Enter")$("#owner-add").click();});
+
+renderAll();
+if(syncReady())runSync(false);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&syncReady()&&Date.now()-(syncCfg.last||0)>60000)runSync(false);});
+window.addEventListener("online",()=>runSync(false));
+// lets the app open offline once it has been loaded (only on a real web address)
+if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
